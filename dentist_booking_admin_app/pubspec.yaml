@@ -2,7 +2,7 @@ name: dentist_booking_admin_app
 description: "Clinic El-Wafa admin mobile app for settings and bookings"
 publish_to: 'none'
 
-version: 1.0.2+2
+version: 1.0.3+3
 
 environment:
   sdk: ^3.9.2
