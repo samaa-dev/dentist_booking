@@ -1,0 +1,104 @@
+import 'package:dentist_booking_app/core/extensions/os_extensions.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../../core/model/booking_model.dart';
+import '../../../generated/locale_keys.g.dart';
+
+class BookingCreateRepo {
+  final SupabaseClient _client;
+
+  BookingCreateRepo({
+    required SupabaseClient client,
+  }) : _client = client;
+
+  Future<BookingModel> createBooking(BookingModel model) async {
+    debugPrint("SENDING TIMESTAMP -> ${model.bookingDate.toIso8601String()}");
+
+    try {
+      final resp = await _client
+          .rpc(
+            'create_booking',
+            params: {
+              "p_booking_date": model.bookingDate.toIso8601String(),
+              "p_patient_id": model.patientId, // تأكد من إرسال id المريض (قد يكون null للضيف)
+              "p_patient_type": model.patientType?.code ?? "registered",
+              "p_guest_name": model.patientName ?? "",
+              "p_guest_phone": model.patientPhone ?? "",
+              "p_guest_address": model.patientAddress ?? "",
+              "p_shift": model.shift.code,
+              "p_booking_status": "pending", // مطلوب حسب الـ Hint
+              "p_booking_created_by": _client.auth.currentUser?.id,
+              "p_created_at": DateTime.now().toIso8601String(), // مطلوب
+              "p_updated_at": DateTime.now().toIso8601String(), // مطلوب
+              "p_cancelled_at": null, // مطلوب
+              "p_completed_at": null, // مطلوب
+              "p_cancelled_by": null, // مطلوب
+              "p_cancel_reason": null, // مطلوب
+            },
+          )
+          .select()
+          .single();
+
+      // ===== تحقق من نجاح عملية الحجز =====
+      if (resp['success'] == false) {
+        final reason = resp['reason'] ?? "unknown_booking_error";
+        final message = resp['message'];
+
+        debugPrint("❌ Failed to create booking: ${resp['reason']}");
+        throw Exception(_mapReasonToMessage(reason, message));
+      }
+
+      debugPrint("✅ RPC RESPONSE: $resp");
+
+      final data = resp['data'];
+      if (data == null) {
+        throw Exception(LocaleKeys.unknown_booking_error.tr());
+      }
+
+      debugPrint("✅ RPC DATA CREATE: $data");
+
+      return BookingModel.fromJson(data as Map<String, dynamic>);
+    } catch (e) {
+      debugPrint("❌ Failed to create booking: $e");
+      throw Exception('Failed to create booking: $e');
+    }
+  }
+
+  String _mapReasonToMessage(String reason, Map<String, dynamic>? message) {
+    switch (reason) {
+      case "day_not_exist":
+        return LocaleKeys.day_not_exist.trnsltd;
+      case "clinic_closed":
+        return LocaleKeys.clinic_closed.trnsltd;
+      case "booking_disabled":
+        return LocaleKeys.booking_disabled.trnsltd;
+      case "invalid_working_hours":
+        return LocaleKeys.invalid_working_hours.trnsltd;
+      case 'too_early_morning':
+        final allowedStart = message?['allowed_start']?.toString() ?? '';
+        return LocaleKeys.too_early_morning.tr(
+          namedArgs: {
+            'allowed_start': allowedStart,
+          },
+        );
+      case 'too_late_morning':
+        return LocaleKeys.too_late_morning.trnsltd;
+      case "too_early_evening":
+        return LocaleKeys.too_early_evening.trnsltd;
+      case "too_late_evening":
+        return LocaleKeys.too_late_evening.trnsltd;
+      case "morning_full":
+        return LocaleKeys.morning_full.trnsltd;
+      case 'evening_full':
+        return LocaleKeys.evening_full.trnsltd;
+      case 'already_booked':
+        return LocaleKeys.already_booked.trnsltd;
+      case 'already_has_self_booking_today':
+        return LocaleKeys.already_has_active_booking.trnsltd;
+      default:
+        return LocaleKeys.unknown_booking_error.trnsltd;
+    }
+  }
+}

@@ -1,0 +1,36 @@
+name: dentist_booking_tv
+description: "TV display app for dentist booking: banners and queue status (current number, waiting count)."
+
+publish_to: 'none'
+
+version: 1.0.4+4
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  audioplayers: ^6.4.0
+  cached_network_image: ^3.4.1
+  carousel_slider: ^5.1.1
+  cupertino_icons: ^1.0.8
+  flutter:
+    sdk: flutter
+  flutter_bloc: ^9.1.1
+  flutter_dotenv: ^6.0.0
+  flutter_tts: ^4.2.0
+  get_it: ^8.0.3
+  google_fonts: ^6.2.1
+  package_info_plus: ^9.0.0
+  supabase_flutter: ^2.8.1
+  wakelock_plus: ^1.2.8
+
+dev_dependencies:
+  flutter_lints: ^5.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  assets:
+    - .env
+    - assets/sounds/queue_chime.wav
