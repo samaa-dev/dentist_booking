@@ -1,0 +1,61 @@
+name: Build Admin Windows Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: dentist_booking_admin
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Enable Windows desktop
+        run: flutter config --enable-windows-desktop
+
+      - name: Install Inno Setup 6
+        run: choco install innosetup --no-progress -y
+        # Chocolatey is available on windows-latest; ISCC.exe lands on PATH.
+        working-directory: .
+
+      - name: Write .env from secrets
+        shell: pwsh
+        env:
+          URL_SUPABASE: ${{ secrets.URL_SUPABASE }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:URL_SUPABASE) -or [string]::IsNullOrWhiteSpace($env:SUPABASE_KEY)) {
+            throw "Missing repository secrets URL_SUPABASE and/or SUPABASE_KEY. Add them under Settings → Secrets and variables → Actions."
+          }
+          $content = "URL_SUPABASE=$($env:URL_SUPABASE)`nSUPABASE_KEY=$($env:SUPABASE_KEY)`n"
+          # No BOM — Get-DotEnvValue in build_release.ps1 must match keys exactly.
+          [System.IO.File]::WriteAllText((Join-Path (Get-Location) '.env'), $content)
+
+      - name: Build installer (Flutter + Inno Setup)
+        shell: pwsh
+        run: |
+          powershell -ExecutionPolicy Bypass -File installer\windows\build_release.ps1 -Clean
+
+      - name: Upload Setup installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: Dashboard-Clinic-El-Wafa-Setup
+          path: dentist_booking_admin/output/windows/*.exe
+          if-no-files-found: error
+          retention-days: 30
