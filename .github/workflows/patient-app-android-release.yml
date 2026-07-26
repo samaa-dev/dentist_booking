@@ -69,13 +69,28 @@ jobs:
             echo "  PATIENT_ANDROID_KEY_PASSWORD" >&2
             exit 1
           fi
-          echo "$KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
+          # Strip whitespace/newlines (common when pasting macOS base64 into GitHub Secrets)
+          # and ignore non-alphabet chars so decode does not fail on wrapping.
+          CLEAN_B64="$(printf '%s' "$KEYSTORE_BASE64" | tr -d '[:space:]')"
+          if ! printf '%s' "$CLEAN_B64" | base64 --decode --ignore-garbage > android/app/release.keystore; then
+            echo "Failed to decode PATIENT_ANDROID_KEYSTORE_BASE64. Regenerate with:" >&2
+            echo "  base64 -i android/app/release.keystore | tr -d '\\n' | pbcopy" >&2
+            exit 1
+          fi
+          if [[ ! -s android/app/release.keystore ]]; then
+            echo "Decoded keystore is empty. Check PATIENT_ANDROID_KEYSTORE_BASE64." >&2
+            exit 1
+          fi
+          # Basic sanity: JKS/PKCS12 keystores are binary and non-trivial size
+          KEYSTORE_SIZE="$(wc -c < android/app/release.keystore | tr -d ' ')"
+          echo "Decoded keystore size: ${KEYSTORE_SIZE} bytes"
           {
             echo "storePassword=$STORE_PASSWORD"
             echo "keyPassword=$KEY_PASSWORD"
             echo "keyAlias=$KEY_ALIAS"
             echo "storeFile=release.keystore"
           } > android/key.properties
+
 
       - name: Build release APK + AAB
         run: bash scripts/build_release.sh
