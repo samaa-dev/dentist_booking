@@ -1,0 +1,24 @@
+name: Build All Releases
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  admin-windows:
+    uses: ./.github/workflows/admin-windows-release.yml
+    secrets: inherit
+
+  admin-app:
+    uses: ./.github/workflows/admin-app-android-release.yml
+    secrets: inherit
+
+  patient-app:
+    uses: ./.github/workflows/patient-app-android-release.yml
+    secrets: inherit
+
+  tv:
+    uses: ./.github/workflows/tv-android-release.yml
+    secrets: inherit

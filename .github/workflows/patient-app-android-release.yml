@@ -1,0 +1,92 @@
+name: Build Patient App Android Release
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dentist_booking_app
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Read app version
+        id: version
+        run: |
+          FULL="$(grep -E '^version:' pubspec.yaml | head -1 | awk '{print $2}')"
+          if [[ -z "$FULL" ]]; then
+            echo "Could not read version from pubspec.yaml" >&2
+            exit 1
+          fi
+          SEMVER="${FULL%%+*}"
+          BUILD="${FULL#*+}"
+          if [[ "$BUILD" == "$FULL" ]]; then BUILD="0"; fi
+          echo "full=$FULL" >> "$GITHUB_OUTPUT"
+          echo "semver=$SEMVER" >> "$GITHUB_OUTPUT"
+          echo "build=$BUILD" >> "$GITHUB_OUTPUT"
+          echo "Version: $FULL (semver: $SEMVER, build: $BUILD)"
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Write .env from secrets
+        env:
+          URL_SUPABASE: ${{ secrets.URL_SUPABASE }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          if [[ -z "$URL_SUPABASE" || -z "$SUPABASE_KEY" ]]; then
+            echo "Missing repository secrets URL_SUPABASE and/or SUPABASE_KEY." >&2
+            exit 1
+          fi
+          printf 'URL_SUPABASE=%s\nSUPABASE_KEY=%s\n' "$URL_SUPABASE" "$SUPABASE_KEY" > .env
+
+      - name: Decode Android keystore and write key.properties
+        env:
+          KEYSTORE_BASE64: ${{ secrets.PATIENT_ANDROID_KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.PATIENT_ANDROID_KEY_ALIAS }}
+          STORE_PASSWORD: ${{ secrets.PATIENT_ANDROID_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.PATIENT_ANDROID_KEY_PASSWORD }}
+        run: |
+          if [[ -z "$KEYSTORE_BASE64" || -z "$KEY_ALIAS" || -z "$STORE_PASSWORD" || -z "$KEY_PASSWORD" ]]; then
+            echo "Missing patient Android signing secrets:" >&2
+            echo "  PATIENT_ANDROID_KEYSTORE_BASE64" >&2
+            echo "  PATIENT_ANDROID_KEY_ALIAS" >&2
+            echo "  PATIENT_ANDROID_STORE_PASSWORD" >&2
+            echo "  PATIENT_ANDROID_KEY_PASSWORD" >&2
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
+          {
+            echo "storePassword=$STORE_PASSWORD"
+            echo "keyPassword=$KEY_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "storeFile=release.keystore"
+          } > android/key.properties
+
+      - name: Build release APK + AAB
+        run: bash scripts/build_release.sh
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          # Artifact names cannot contain '+'; use '-' instead of build separator.
+          name: dentist_booking_app-v${{ steps.version.outputs.semver }}-${{ steps.version.outputs.build }}
+          path: |
+            dentist_booking_app/dist/*.apk
+            dentist_booking_app/dist/*.aab
+          if-no-files-found: error
+          retention-days: 30
