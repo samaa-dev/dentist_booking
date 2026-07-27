@@ -15,6 +15,10 @@ final _privateConstructorUsedError = UnsupportedError(
   'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
 );
 
+BookingModel _$BookingModelFromJson(Map<String, dynamic> json) {
+  return _BookingModel.fromJson(json);
+}
+
 /// @nodoc
 mixin _$BookingModel {
   String? get id => throw _privateConstructorUsedError;
@@ -57,6 +61,9 @@ mixin _$BookingModel {
   String? get ticketCode => throw _privateConstructorUsedError; // إضافة حقل جديد
   @JsonKey(name: 'people_before')
   int? get peopleBefore => throw _privateConstructorUsedError;
+
+  /// Serializes this BookingModel to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
   /// Create a copy of BookingModel
   /// with the given fields replaced by the non-null parameter values.
@@ -374,8 +381,8 @@ class __$$BookingModelImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-
-class _$BookingModelImpl with DiagnosticableTreeMixin implements _BookingModel {
+@JsonSerializable()
+class _$BookingModelImpl implements _BookingModel {
   const _$BookingModelImpl({
     this.id,
     @JsonKey(name: "booking_date") required this.bookingDate,
@@ -402,6 +409,9 @@ class _$BookingModelImpl with DiagnosticableTreeMixin implements _BookingModel {
     @JsonKey(name: 'ticket_code') this.ticketCode,
     @JsonKey(name: 'people_before') this.peopleBefore,
   });
+
+  factory _$BookingModelImpl.fromJson(Map<String, dynamic> json) =>
+      _$$BookingModelImplFromJson(json);
 
   @override
   final String? id;
@@ -467,34 +477,8 @@ class _$BookingModelImpl with DiagnosticableTreeMixin implements _BookingModel {
   final int? peopleBefore;
 
   @override
-  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
+  String toString() {
     return 'BookingModel(id: $id, bookingDate: $bookingDate, patientId: $patientId, patientName: $patientName, patientPhone: $patientPhone, patientAddress: $patientAddress, patientType: $patientType, shift: $shift, bookingStatus: $bookingStatus, createdAt: $createdAt, updatedAt: $updatedAt, cancelledAt: $cancelledAt, completedAt: $completedAt, cancelledBy: $cancelledBy, cancelReason: $cancelReason, bookingCreatedBy: $bookingCreatedBy, queueNumber: $queueNumber, ticketCode: $ticketCode, peopleBefore: $peopleBefore)';
-  }
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties
-      ..add(DiagnosticsProperty('type', 'BookingModel'))
-      ..add(DiagnosticsProperty('id', id))
-      ..add(DiagnosticsProperty('bookingDate', bookingDate))
-      ..add(DiagnosticsProperty('patientId', patientId))
-      ..add(DiagnosticsProperty('patientName', patientName))
-      ..add(DiagnosticsProperty('patientPhone', patientPhone))
-      ..add(DiagnosticsProperty('patientAddress', patientAddress))
-      ..add(DiagnosticsProperty('patientType', patientType))
-      ..add(DiagnosticsProperty('shift', shift))
-      ..add(DiagnosticsProperty('bookingStatus', bookingStatus))
-      ..add(DiagnosticsProperty('createdAt', createdAt))
-      ..add(DiagnosticsProperty('updatedAt', updatedAt))
-      ..add(DiagnosticsProperty('cancelledAt', cancelledAt))
-      ..add(DiagnosticsProperty('completedAt', completedAt))
-      ..add(DiagnosticsProperty('cancelledBy', cancelledBy))
-      ..add(DiagnosticsProperty('cancelReason', cancelReason))
-      ..add(DiagnosticsProperty('bookingCreatedBy', bookingCreatedBy))
-      ..add(DiagnosticsProperty('queueNumber', queueNumber))
-      ..add(DiagnosticsProperty('ticketCode', ticketCode))
-      ..add(DiagnosticsProperty('peopleBefore', peopleBefore));
   }
 
   @override
@@ -540,6 +524,7 @@ class _$BookingModelImpl with DiagnosticableTreeMixin implements _BookingModel {
                 other.peopleBefore == peopleBefore));
   }
 
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hashAll([
     runtimeType,
@@ -571,6 +556,11 @@ class _$BookingModelImpl with DiagnosticableTreeMixin implements _BookingModel {
   @pragma('vm:prefer-inline')
   _$$BookingModelImplCopyWith<_$BookingModelImpl> get copyWith =>
       __$$BookingModelImplCopyWithImpl<_$BookingModelImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$BookingModelImplToJson(this);
+  }
 }
 
 abstract class _BookingModel implements BookingModel {
@@ -600,6 +590,9 @@ abstract class _BookingModel implements BookingModel {
     @JsonKey(name: 'ticket_code') final String? ticketCode,
     @JsonKey(name: 'people_before') final int? peopleBefore,
   }) = _$BookingModelImpl;
+
+  factory _BookingModel.fromJson(Map<String, dynamic> json) =
+      _$BookingModelImpl.fromJson;
 
   @override
   String? get id;

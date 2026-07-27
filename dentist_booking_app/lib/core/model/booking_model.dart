@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../enum/enum.dart';
@@ -48,29 +47,8 @@ class BookingModel with _$BookingModel {
     @JsonKey(name: 'people_before') int? peopleBefore,
   }) = _BookingModel;
 
-  factory BookingModel.fromJson(Map<String, dynamic> json) {
-    // ✅ إضافة debug logging
-    debugPrint("📥 BookingModel.fromJson - Input JSON keys: ${json.keys.toList()}");
-    debugPrint("📥 BookingModel.fromJson - patient_name from JSON: ${json['patient_name']}");
-    debugPrint("📥 BookingModel.fromJson - guest_name from JSON: ${json['guest_name']}");
-    debugPrint("📥 BookingModel.fromJson - patient_id: ${json['patient_id']}");
-    debugPrint("📥 BookingModel.fromJson - patient_type: ${json['patient_type']}");
-
-    final result = _$$BookingModelImplFromJson(json);
-
-    debugPrint("📥 BookingModel.fromJson - Result patientName: ${result.patientName}");
-    debugPrint("📥 BookingModel.fromJson - Result patientPhone: ${result.patientPhone}");
-    debugPrint("📥 BookingModel.fromJson - Result patientAddress: ${result.patientAddress}");
-
-    return result;
-  }
-
-  static String? queueNumberFromJson(dynamic value) {
-    if (value == null) return null;
-    return value.toString(); // يحول int → String
-  }
-
-  static dynamic queueNumberToJson(String? value) {
-    return value; // ترسله كما هو
-  }
+  // Must use _$BookingModelFromJson so freezed also generates toJson
+  // (required by TrackingModel nested serialization).
+  factory BookingModel.fromJson(Map<String, dynamic> json) =>
+      _$BookingModelFromJson(json);
 }
