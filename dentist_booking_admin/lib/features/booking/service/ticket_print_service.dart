@@ -21,6 +21,7 @@ class TicketPrintService {
   final SettingsRepo? _settingsRepo;
 
   String? _ticketNote;
+  set ticketNote(String? value) => _ticketNote = value;
   String? _clinicPhone;
 
   /// Returns list of available printers (from printing_ffi). Empty list on unsupported platform or error.
