@@ -20,8 +20,8 @@ class TicketPrintService {
   final TicketPdfService _ticketPdfService;
   final SettingsRepo? _settingsRepo;
 
-  /// Cached ticket footer note (synced from settings, refreshed before print when possible).
-  String? ticketNote;
+  String? _ticketNote;
+  String? _clinicPhone;
 
   /// Returns list of available printers (from printing_ffi). Empty list on unsupported platform or error.
   List<pffi.Printer> listPrinters() {
@@ -33,25 +33,30 @@ class TicketPrintService {
     }
   }
 
-  Future<String?> _resolveTicketNote() async {
+  Future<void> _refreshSettings() async {
     final repo = _settingsRepo;
-    if (repo == null) return ticketNote;
+    if (repo == null) return;
     try {
       final config = await repo.getSettings();
-      ticketNote = config.settings.ticketNote;
+      _ticketNote = config.settings.ticketNote;
+      _clinicPhone = config.settings.clinicPhone;
     } catch (e) {
-      debugPrint('[TicketPrintService] failed to refresh ticketNote: $e');
+      debugPrint('[TicketPrintService] failed to refresh settings: $e');
     }
-    return ticketNote;
+  }
+
+  Future<Uint8List> _buildPdf(BookingModel booking) async {
+    await _refreshSettings();
+    return _ticketPdfService.buildTicketPdf(
+      booking,
+      ticketNote: _ticketNote,
+      clinicPhone: _clinicPhone,
+    );
   }
 
   /// Prints ticket PDF to the given printer by name. Throws on failure.
   Future<void> printTicketToPrinter(BookingModel booking, String printerName) async {
-    final note = await _resolveTicketNote();
-    final bytes = await _ticketPdfService.buildTicketPdf(
-      booking,
-      ticketNote: note,
-    );
+    final bytes = await _buildPdf(booking);
     final name = 'booking-ticket-${booking.ticketCode ?? booking.id}';
     final dir = await getTemporaryDirectory();
     final path = '${dir.path}/$name.pdf';
@@ -77,11 +82,7 @@ class TicketPrintService {
     debugPrint('[TicketPrintService] printTicket started for booking id=${booking.id} ticketCode=${booking.ticketCode}');
     Uint8List bytes;
     try {
-      final note = await _resolveTicketNote();
-      bytes = await _ticketPdfService.buildTicketPdf(
-        booking,
-        ticketNote: note,
-      );
+      bytes = await _buildPdf(booking);
       debugPrint('[TicketPrintService] PDF built successfully, size=${bytes.length} bytes');
     } catch (e, stack) {
       debugPrint('[TicketPrintService] buildTicketPdf failed: $e');
