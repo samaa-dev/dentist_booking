@@ -1,3 +1,4 @@
+import '../enum/enum.dart';
 import '../extensions/os_extensions.dart';
 import '../model/queue_stats_model.dart';
 import '../../generated/locale_keys.g.dart';
@@ -43,9 +44,16 @@ abstract final class QueueTurnDisplay {
     };
   }
 
-  static String currentQueueValue(QueueStatsModel stats) {
+  static String currentQueueValue(
+    QueueStatsModel stats, {
+    BookingShift? shift,
+  }) {
     if (stats.currentQueueNumber == 0) {
-      return LocaleKeys.queue_not_started.trnsltd;
+      return switch (shift) {
+        BookingShift.morning => LocaleKeys.queue_not_started_morning.trnsltd,
+        BookingShift.evening => LocaleKeys.queue_not_started_evening.trnsltd,
+        null => LocaleKeys.queue_not_started.trnsltd,
+      };
     }
     return '${stats.currentQueueNumber}';
   }

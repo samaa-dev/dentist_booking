@@ -200,6 +200,7 @@ class _ActiveBookingsListState extends State<ActiveBookingsList> {
                                       icon: Icons.play_arrow_rounded,
                                       value: QueueTurnDisplay.currentQueueValue(
                                         queue.queueStats,
+                                        shift: queue.booking.shift,
                                       ),
                                       label: LocaleKeys.current_number.trnsltd,
                                       color: colorScheme.primary,

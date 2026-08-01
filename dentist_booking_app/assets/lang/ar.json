@@ -247,6 +247,8 @@
   "already_has_active_booking": "لديك حجز فعال بالفعل. لا يمكنك حجز أكثر من موعد لنفسك",
   "your_booking": "حجزك",
   "queue_not_started": "الطابور لم يبدأ بعد",
+  "queue_not_started_morning": "الطابور الصباحي لم يبدأ بعد",
+  "queue_not_started_evening": "الطابور المسائي لم يبدأ بعد",
   "you_are_next_in_queue": "أنت صاحب الدور القادم",
   "you_are_current_turn": "أنت صاحب الدور الحالي",
   "you_already_called": "تم استدعاؤك",

@@ -247,6 +247,8 @@
     "already_has_active_booking": "You already have an active booking. You cannot book more than one appointment for yourself",
     "your_booking": "Your booking",
     "queue_not_started": "Queue not started yet",
+    "queue_not_started_morning": "Morning queue has not started yet",
+    "queue_not_started_evening": "Evening queue has not started yet",
     "you_are_next_in_queue": "You're next in queue",
     "you_are_current_turn": "It's your turn now",
     "you_already_called": "You have been called",

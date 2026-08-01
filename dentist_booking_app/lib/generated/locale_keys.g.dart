@@ -232,6 +232,8 @@ abstract class  LocaleKeys {
   static const already_has_active_booking = 'already_has_active_booking';
   static const your_booking = 'your_booking';
   static const queue_not_started = 'queue_not_started';
+  static const queue_not_started_morning = 'queue_not_started_morning';
+  static const queue_not_started_evening = 'queue_not_started_evening';
   static const you_are_next_in_queue = 'you_are_next_in_queue';
   static const you_are_current_turn = 'you_are_current_turn';
   static const you_already_called = 'you_already_called';
