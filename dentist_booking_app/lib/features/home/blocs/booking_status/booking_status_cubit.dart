@@ -23,14 +23,18 @@ class BookingStatusCubit extends Cubit<BookingStatusState> {
        _client = client,
        super(const BookingStatusState.loading());
 
-  Future<void> loadStatus() async {
-    emit(const BookingStatusState.loading());
+  Future<void> loadStatus({bool showLoading = true}) async {
+    if (showLoading) {
+      emit(const BookingStatusState.loading());
+    }
 
     try {
       final status = await _bookingStatusRepo.getBookingStatus();
+      if (isClosed) return;
       emit(BookingStatusState.loaded(status));
     } catch (e) {
       debugPrint('Error loading booking status: $e');
+      if (isClosed) return;
       emit(
         BookingStatusState.error(
           message: LocaleKeys.restore_booking_status_failed.trnsltd,

@@ -6,8 +6,10 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:dentist_booking_tv/core/config/env_config.dart';
 import 'package:dentist_booking_tv/core/model/ads_model.dart';
 import 'package:dentist_booking_tv/core/utils/algerian_date_format.dart';
+import 'package:dentist_booking_tv/core/utils/media_url_utils.dart';
 import 'package:dentist_booking_tv/core/utils/tv_scale.dart';
 import 'package:flutter/material.dart';
+import 'package:video_player/video_player.dart';
 
 class AdsCarouselTv extends StatefulWidget {
   const AdsCarouselTv({super.key, required this.ads});
@@ -19,10 +21,15 @@ class AdsCarouselTv extends StatefulWidget {
 }
 
 class _AdsCarouselTvState extends State<AdsCarouselTv> {
-  int _currentIndex = 0;
-  Timer? _timeTimer;
+  static const _imageAutoPlayInterval = Duration(seconds: 5);
 
-  List<String> get _imageUrls {
+  int _currentIndex = 0;
+  bool _isVideoPlaying = false;
+  Timer? _timeTimer;
+  final CarouselSliderController _carouselController =
+      CarouselSliderController();
+
+  List<String> get _mediaUrls {
     final urls = <String>[];
     for (final ad in widget.ads) {
       if (ad.linkUrl != null && ad.linkUrl!.isNotEmpty) {
@@ -38,6 +45,9 @@ class _AdsCarouselTvState extends State<AdsCarouselTv> {
   /// First ad for overlay title/body when carousel has content.
   AdsModel? get _firstAd => widget.ads.isNotEmpty ? widget.ads.first : null;
 
+  bool _isCurrentVideo(List<String> urls) =>
+      urls.isNotEmpty && isVideoUrl(urls[_currentIndex.clamp(0, urls.length - 1)]);
+
   @override
   void initState() {
     super.initState();
@@ -45,6 +55,12 @@ class _AdsCarouselTvState extends State<AdsCarouselTv> {
       const Duration(seconds: 60),
       (_) => setState(() {}),
     );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final urls = _mediaUrls;
+      if (urls.isNotEmpty && isVideoUrl(urls.first)) {
+        setState(() => _isVideoPlaying = true);
+      }
+    });
   }
 
   @override
@@ -53,10 +69,27 @@ class _AdsCarouselTvState extends State<AdsCarouselTv> {
     super.dispose();
   }
 
+  void _onPageChanged(int index, List<String> urls) {
+    final isVideo = index >= 0 && index < urls.length && isVideoUrl(urls[index]);
+    setState(() {
+      _currentIndex = index;
+      _isVideoPlaying = isVideo;
+    });
+  }
+
+  void _advanceAfterVideo() {
+    if (!mounted) return;
+    setState(() => _isVideoPlaying = false);
+    _carouselController.nextPage(
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.easeInOut,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final urls = _imageUrls;
+    final urls = _mediaUrls;
     final now = DateTime.now();
 
     return Stack(
@@ -91,15 +124,30 @@ class _AdsCarouselTvState extends State<AdsCarouselTv> {
       );
     }
 
+    final pauseForVideo = _isVideoPlaying || _isCurrentVideo(urls);
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final height = constraints.maxHeight;
         return CarouselSlider.builder(
+          carouselController: _carouselController,
           itemCount: urls.length,
           itemBuilder: (context, index, realIndex) {
+            final url = urls[index];
+            final active = index == _currentIndex;
+            if (isVideoUrl(url)) {
+              return SizedBox.expand(
+                child: _TvAdVideoSlide(
+                  key: ValueKey('tv-ad-video-$index-$url'),
+                  url: url,
+                  isActive: active,
+                  onFinished: _advanceAfterVideo,
+                ),
+              );
+            }
             return SizedBox.expand(
               child: CachedNetworkImage(
-                imageUrl: urls[index],
+                imageUrl: url,
                 fit: BoxFit.cover,
                 width: double.infinity,
                 height: double.infinity,
@@ -120,11 +168,11 @@ class _AdsCarouselTvState extends State<AdsCarouselTv> {
           },
           options: CarouselOptions(
             height: height,
-            autoPlay: true,
-            autoPlayInterval: const Duration(seconds: 5),
+            autoPlay: !pauseForVideo,
+            autoPlayInterval: _imageAutoPlayInterval,
             viewportFraction: 1.0,
             enlargeCenterPage: false,
-            onPageChanged: (index, _) => setState(() => _currentIndex = index),
+            onPageChanged: (index, _) => _onPageChanged(index, urls),
           ),
         );
       },
@@ -246,6 +294,188 @@ class _AdsCarouselTvState extends State<AdsCarouselTv> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Muted network video for an ads carousel slide. Plays only while [isActive].
+class _TvAdVideoSlide extends StatefulWidget {
+  const _TvAdVideoSlide({
+    super.key,
+    required this.url,
+    required this.isActive,
+    required this.onFinished,
+  });
+
+  final String url;
+  final bool isActive;
+  final VoidCallback onFinished;
+
+  /// Skip if init fails or stalls.
+  static const initTimeout = Duration(seconds: 8);
+
+  /// Cap how long a single video may hold the carousel.
+  static const maxDisplayDuration = Duration(seconds: 90);
+
+  @override
+  State<_TvAdVideoSlide> createState() => _TvAdVideoSlideState();
+}
+
+class _TvAdVideoSlideState extends State<_TvAdVideoSlide> {
+  VideoPlayerController? _controller;
+  bool _finishedNotified = false;
+  bool _hasError = false;
+  Timer? _initTimeoutTimer;
+  Timer? _maxDisplayTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isActive) {
+      _startPlayback();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _TvAdVideoSlide oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive) {
+      _startPlayback();
+    } else if (!widget.isActive && oldWidget.isActive) {
+      _tearDown();
+    }
+  }
+
+  @override
+  void dispose() {
+    _tearDown();
+    super.dispose();
+  }
+
+  void _notifyFinished() {
+    if (_finishedNotified || !mounted) return;
+    _finishedNotified = true;
+    _cancelTimers();
+    widget.onFinished();
+  }
+
+  void _cancelTimers() {
+    _initTimeoutTimer?.cancel();
+    _initTimeoutTimer = null;
+    _maxDisplayTimer?.cancel();
+    _maxDisplayTimer = null;
+  }
+
+  Future<void> _tearDown() async {
+    _cancelTimers();
+    final controller = _controller;
+    _controller = null;
+    if (controller == null) return;
+    controller.removeListener(_onControllerUpdate);
+    try {
+      await controller.pause();
+    } catch (_) {}
+    await controller.dispose();
+    if (mounted) {
+      setState(() {
+        _hasError = false;
+        _finishedNotified = false;
+      });
+    } else {
+      _hasError = false;
+      _finishedNotified = false;
+    }
+  }
+
+  Future<void> _startPlayback() async {
+    await _tearDown();
+    if (!mounted || !widget.isActive) return;
+
+    _finishedNotified = false;
+    _hasError = false;
+
+    final controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+    _controller = controller;
+    controller.addListener(_onControllerUpdate);
+
+    _initTimeoutTimer = Timer(_TvAdVideoSlide.initTimeout, () {
+      if (!mounted || _finishedNotified) return;
+      if (!(_controller?.value.isInitialized ?? false)) {
+        debugPrint('TV ad video init timeout: ${widget.url}');
+        _notifyFinished();
+      }
+    });
+
+    _maxDisplayTimer = Timer(_TvAdVideoSlide.maxDisplayDuration, () {
+      if (!mounted || _finishedNotified) return;
+      debugPrint('TV ad video max display reached: ${widget.url}');
+      _notifyFinished();
+    });
+
+    try {
+      await controller.initialize();
+      if (!mounted || _controller != controller || !widget.isActive) {
+        await controller.dispose();
+        return;
+      }
+      _initTimeoutTimer?.cancel();
+      _initTimeoutTimer = null;
+      await controller.setLooping(false);
+      await controller.setVolume(0);
+      await controller.play();
+      if (mounted) setState(() {});
+    } catch (e) {
+      debugPrint('TV ad video error: $e');
+      if (!mounted) return;
+      setState(() => _hasError = true);
+      _notifyFinished();
+    }
+  }
+
+  void _onControllerUpdate() {
+    final controller = _controller;
+    if (controller == null || _finishedNotified) return;
+    final value = controller.value;
+    if (value.hasError) {
+      debugPrint('TV ad video playback error: ${value.errorDescription}');
+      _notifyFinished();
+      return;
+    }
+    if (!value.isInitialized || value.duration <= Duration.zero) return;
+    // Treat near-end as completed (some devices never report exact duration).
+    if (value.position + const Duration(milliseconds: 350) >= value.duration) {
+      _notifyFinished();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final controller = _controller;
+
+    if (_hasError || controller == null || !controller.value.isInitialized) {
+      return ColoredBox(
+        color: colorScheme.surfaceContainerHighest,
+        child: Center(
+          child: _hasError
+              ? Icon(
+                  Icons.videocam_off_outlined,
+                  size: context.s(48),
+                  color: colorScheme.outline,
+                )
+              : const CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    return FittedBox(
+      fit: BoxFit.cover,
+      clipBehavior: Clip.hardEdge,
+      child: SizedBox(
+        width: controller.value.size.width,
+        height: controller.value.size.height,
+        child: VideoPlayer(controller),
       ),
     );
   }

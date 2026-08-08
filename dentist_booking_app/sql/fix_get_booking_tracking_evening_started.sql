@@ -48,15 +48,19 @@ BEGIN
         profile_meta := NULL;
     END IF;
 
-    patient_name := booking_record.guest_name;
-    patient_phone := booking_record.guest_phone;
-    patient_address := booking_record.guest_address;
-
-    IF profile_meta IS NOT NULL THEN
-        patient_name := COALESCE(profile_meta->'raw_user_meta_data'->>'full_name', patient_name);
-        patient_phone := COALESCE(profile_meta->'raw_user_meta_data'->>'phone', patient_phone);
-        patient_address := COALESCE(profile_meta->'raw_user_meta_data'->>'address', patient_address);
-    END IF;
+    -- Prefer guest_* when booking is for another person; else fall back to profile.
+    patient_name := COALESCE(
+      NULLIF(TRIM(booking_record.guest_name), ''),
+      profile_meta->'raw_user_meta_data'->>'full_name'
+    );
+    patient_phone := COALESCE(
+      NULLIF(TRIM(booking_record.guest_phone), ''),
+      profile_meta->'raw_user_meta_data'->>'phone'
+    );
+    patient_address := COALESCE(
+      NULLIF(TRIM(booking_record.guest_address), ''),
+      profile_meta->'raw_user_meta_data'->>'address'
+    );
 
     SELECT COUNT(*) INTO total_in_queue
     FROM bookings b

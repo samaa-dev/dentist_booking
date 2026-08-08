@@ -1,8 +1,17 @@
--- Purpose: Fix ticket tracking so an evening booking is never treated as
--- "current turn" based on a stale evening queue_state pointer while morning
--- is still active (or before evening hours). Also day-resets queue_state for
--- the booking's shift (same idea as queue_status).
+-- Purpose: Prefer bookings.guest_* over profile full_name/phone/address when
+-- resolving patient_name for get_booking_tracking.
+--
+-- Bug: COALESCE(profile, guest) always showed the account owner name even when
+-- the booking was for another person (guest_name set, patient_id still owner).
+-- Fix: COALESCE(NULLIF(TRIM(guest), ''), profile) — same pattern as queue_status.
+--
+-- Includes the evening-started + day-reset logic from
+-- fix_get_booking_tracking_evening_started.sql so this file can be applied alone.
 -- Run in the Supabase SQL Editor against the project database.
+--
+-- Verify after apply:
+-- 1) Self booking (empty guest_name) → patient_name = profile full_name
+-- 2) Booking for another person (guest_name set) → patient_name = guest_name
 
 CREATE OR REPLACE FUNCTION "public"."get_booking_tracking"("ticket_code_param" "text") RETURNS "jsonb"
     LANGUAGE "plpgsql" SECURITY DEFINER
@@ -19,6 +28,7 @@ DECLARE
     patients_before INTEGER;
     estimated_wait INTEGER;
     clock_shift booking_shift;
+    evening_started_today BOOLEAN;
     booking_day DATE;
     today_date DATE := CURRENT_DATE;
     result JSONB;
@@ -88,11 +98,19 @@ BEGIN
         effective_current := 0;
     END IF;
 
-    -- Shift-not-active-yet: evening ticket during morning / outside hours
-    -- must not inherit a stale or premature evening pointer.
+    -- Evening not-started guard: zero only if evening was NOT started today
+    -- and we are still in morning / outside evening clock window.
+    -- If staff already advanced evening today (current > 0, updated today),
+    -- keep the real pointer even when get_current_shift() is NULL/morning.
     IF booking_day = today_date AND booking_record.shift = 'evening' THEN
         clock_shift := get_current_shift();
-        IF clock_shift IS NULL OR clock_shift = 'morning' THEN
+        evening_started_today := (
+            qs.current_queue_number > 0
+            AND qs.updated_at IS NOT NULL
+            AND (qs.updated_at)::date = today_date
+        );
+        IF NOT evening_started_today
+           AND (clock_shift IS NULL OR clock_shift = 'morning') THEN
             effective_current := 0;
         END IF;
     END IF;

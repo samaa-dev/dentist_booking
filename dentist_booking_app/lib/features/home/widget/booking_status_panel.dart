@@ -124,8 +124,7 @@ class _BookingStatusPanelLayout extends StatelessWidget {
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
             child: Container(
-              height: 250,
-              padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
               decoration: BoxDecoration(
                 color: colorScheme.surface.withOpacity(0.10),
                 borderRadius: BorderRadius.circular(26),
@@ -138,12 +137,10 @@ class _BookingStatusPanelLayout extends StatelessWidget {
                   ),
                 ],
               ),
-
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 0),
                   Row(
                     children: [
                       Container(
@@ -155,56 +152,69 @@ class _BookingStatusPanelLayout extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 10),
-                      Text(
-                        statusText,
-                        style: textTheme.titleMedium!.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: statusColor,
+                      Flexible(
+                        child: Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text: statusText,
+                                style: textTheme.titleMedium!.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: statusColor,
+                                ),
+                              ),
+                              if (canBook) ...[
+                                TextSpan(
+                                  text: '  ·  ',
+                                  style: textTheme.bodySmall!.copyWith(
+                                    color: colorScheme.onSurface
+                                        .withOpacity(.45),
+                                  ),
+                                ),
+                                WidgetSpan(
+                                  alignment: PlaceholderAlignment.middle,
+                                  child: Icon(
+                                    HugeIcons.strokeRoundedDentalCare,
+                                    size: 16,
+                                    color: colorScheme.primary,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: ' $shiftText',
+                                  style: textTheme.bodySmall!.copyWith(
+                                    color: colorScheme.onSurface
+                                        .withOpacity(.8),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-
-                      Spacer(),
-                      _refreshButton(context),
-                      SizedBox(width: 10),
+                      const SizedBox(width: 8),
+                      _BookingPanelRefreshButton(
+                        onRefresh: () => context
+                            .read<BookingStatusCubit>()
+                            .loadStatus(showLoading: false),
+                      ),
                     ],
                   ),
-
-                  const SizedBox(height: 25),
-
-                  if (canBook) ...[
-                    Row(
-                      children: [
-                        Icon(
-                          HugeIcons.strokeRoundedDentalCare,
-                          size: 20,
-                          color: colorScheme.primary,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          shiftText,
-                          style: textTheme.bodySmall!.copyWith(
-                            color: colorScheme.onSurface.withOpacity(.8),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ] else ...[
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Text(
-                        !isBookingEnabled
-                            ? stoppedSubtitle
-                            : LocaleKeys.booking_closed_now.trnsltd,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: textTheme.bodySmall!.copyWith(
-                          color: colorScheme.onSurface.withOpacity(.7),
-                        ),
+                  if (!canBook) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      !isBookingEnabled
+                          ? stoppedSubtitle
+                          : LocaleKeys.booking_closed_now.trnsltd,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.bodySmall!.copyWith(
+                        color: colorScheme.onSurface.withOpacity(.7),
                       ),
                     ),
                   ],
-
-                  Spacer(),
+                  const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
@@ -230,7 +240,6 @@ class _BookingStatusPanelLayout extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
                 ],
               ),
             ),
@@ -239,24 +248,83 @@ class _BookingStatusPanelLayout extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _refreshButton(BuildContext context) {
+class _BookingPanelRefreshButton extends StatefulWidget {
+  const _BookingPanelRefreshButton({required this.onRefresh});
+
+  final Future<void> Function() onRefresh;
+
+  @override
+  State<_BookingPanelRefreshButton> createState() =>
+      _BookingPanelRefreshButtonState();
+}
+
+class _BookingPanelRefreshButtonState extends State<_BookingPanelRefreshButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _spinController;
+  bool _refreshing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _spinController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+  }
+
+  @override
+  void dispose() {
+    _spinController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleTap() async {
+    if (_refreshing) return;
+    setState(() => _refreshing = true);
+    _spinController.repeat();
+    try {
+      await widget.onRefresh();
+    } finally {
+      if (mounted) {
+        _spinController.stop();
+        _spinController.reset();
+        setState(() => _refreshing = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final tooltip =
+        MaterialLocalizations.of(context).refreshIndicatorSemanticLabel;
 
-    return Container(
-      height: 25,
-      width: 25,
-      decoration: BoxDecoration(
-        color: colorScheme.primary,
-        shape: BoxShape.circle,
+    return IconButton(
+      onPressed: _refreshing ? null : _handleTap,
+      tooltip: tooltip,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+      style: IconButton.styleFrom(
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
-      child: GestureDetector(
-        child: Icon(
-          Icons.refresh_rounded,
-          color: colorScheme.onSecondary,
-          size: 20,
+      icon: Container(
+        width: 28,
+        height: 28,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: colorScheme.primary,
+          shape: BoxShape.circle,
         ),
-        onTap: () => context.read<BookingStatusCubit>().loadStatus(),
+        child: RotationTransition(
+          turns: _spinController,
+          child: Icon(
+            Icons.refresh_rounded,
+            color: colorScheme.onPrimary,
+            size: 18,
+          ),
+        ),
       ),
     );
   }
@@ -328,7 +396,11 @@ class _ActiveBookingPanel extends StatelessWidget {
                           ),
                         ),
                       ),
-                      _refreshButton(context),
+                      _BookingPanelRefreshButton(
+                        onRefresh: () => context
+                            .read<QueueCubit>()
+                            .loadActiveBookingQueue(force: true),
+                      ),
                       const SizedBox(width: 10),
                     ],
                   ),
@@ -547,27 +619,6 @@ class _ActiveBookingPanel extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _refreshButton(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Container(
-      height: 25,
-      width: 25,
-      decoration: BoxDecoration(
-        color: colorScheme.primary,
-        shape: BoxShape.circle,
-      ),
-      child: GestureDetector(
-        child: Icon(
-          Icons.refresh_rounded,
-          color: colorScheme.onSecondary,
-          size: 20,
-        ),
-        onTap: () => context.read<QueueCubit>().loadActiveBookingQueue(),
       ),
     );
   }

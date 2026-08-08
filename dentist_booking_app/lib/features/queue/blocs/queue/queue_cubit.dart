@@ -103,8 +103,15 @@ class QueueCubit extends Cubit<QueueState> {
     }
   }
 
-  Future<void> loadActiveBookingQueue() async {
-    if (_loadInFlight || isClosed) return;
+  Future<void> loadActiveBookingQueue({bool force = false}) async {
+    if (isClosed) return;
+    if (_loadInFlight) {
+      if (!force) return;
+      while (_loadInFlight && !isClosed) {
+        await Future.delayed(const Duration(milliseconds: 40));
+      }
+      if (isClosed) return;
+    }
     _loadInFlight = true;
     try {
       final queues = await _queueRepo.getAllActiveBookingQueues();

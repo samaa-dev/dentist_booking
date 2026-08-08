@@ -32,37 +32,33 @@ class BookingStatusLoadingPanel extends StatelessWidget {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
           child: Container(
-            height: 260,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            height: 120,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(26),
               color: colorScheme.surface.withOpacity(.08),
               border: Border.all(color: colorScheme.primary.withOpacity(.08)),
             ),
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Spacer(),
                 Row(
                   children: [
-                    _shimmerBox(colorScheme),
-                    const SizedBox(width: 14),
+                    _shimmerCircle(colorScheme, size: 10),
+                    const SizedBox(width: 10),
                     Expanded(child: _shimmerLine(colorScheme)),
                     const SizedBox(width: 14),
-                    _shimmerCircle(colorScheme),
+                    _shimmerCircle(colorScheme, size: 25),
                   ],
                 ),
-                const Spacer(),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    _shimmerBox(colorScheme),
-                    const SizedBox(width: 14),
-                    Expanded(child: _shimmerLine(colorScheme)),
-                    const SizedBox(width: 14),
-                    _shimmerCircle(colorScheme),
-                  ],
+                const SizedBox(height: 16),
+                Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withOpacity(.10),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                const Spacer(),
               ],
             ),
           ),
@@ -70,15 +66,6 @@ class BookingStatusLoadingPanel extends StatelessWidget {
       ),
     );
   }
-
-  Widget _shimmerBox(ColorScheme c) => Container(
-    width: 36,
-    height: 36,
-    decoration: BoxDecoration(
-      color: c.primary.withOpacity(.10),
-      borderRadius: BorderRadius.circular(10),
-    ),
-  );
 
   Widget _shimmerLine(ColorScheme c) => Container(
     height: 10,
@@ -88,9 +75,9 @@ class BookingStatusLoadingPanel extends StatelessWidget {
     ),
   );
 
-  Widget _shimmerCircle(ColorScheme c) => Container(
-    width: 38,
-    height: 38,
+  Widget _shimmerCircle(ColorScheme c, {double size = 38}) => Container(
+    width: size,
+    height: size,
     decoration: BoxDecoration(
       color: c.primary.withOpacity(.10),
       shape: BoxShape.circle,

@@ -3,7 +3,7 @@ description: "TV display app for dentist booking: banners and queue status (curr
 
 publish_to: 'none'
 
-version: 1.0.5+5
+version: 1.0.6+6
 
 environment:
   sdk: ^3.9.2
@@ -23,6 +23,7 @@ dependencies:
   package_info_plus: ^9.0.0
   path_provider: ^2.1.6
   supabase_flutter: ^2.8.1
+  video_player: ^2.11.1
   wakelock_plus: ^1.2.8
 
 dev_dependencies:
