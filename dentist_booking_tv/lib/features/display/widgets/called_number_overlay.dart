@@ -6,7 +6,7 @@ import 'package:dentist_booking_tv/core/utils/tv_scale.dart';
 import 'package:flutter/material.dart';
 
 /// Full-screen overlay when a new queue number is called.
-/// Sequence: pop in → attention chime → TTS once (optional) → short hold → shrink out → onDismiss.
+/// Sequence: pop in → announceTurn (chime + speech) → short hold → shrink out → onDismiss.
 class CalledNumberOverlay extends StatefulWidget {
   const CalledNumberOverlay({
     super.key,
@@ -87,12 +87,7 @@ class _CalledNumberOverlayState extends State<CalledNumberOverlay>
     if (!mounted) return;
 
     final announcement = getIt<QueueAnnouncementService>();
-    await announcement.playAttentionChime();
-    if (!mounted) return;
-
-    if (EnvConfig.tvAnnouncementEnabled) {
-      await announcement.speakTurnOnce(widget.queueNumber);
-    }
+    await announcement.announceTurn(widget.queueNumber);
     if (!mounted) return;
 
     await Future.delayed(

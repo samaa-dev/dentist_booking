@@ -191,11 +191,11 @@ class _ActiveBookingsListState extends State<ActiveBookingsList> {
                             child: Column(
                               children: [
                                 const Divider(height: 20),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceAround,
-                                  children: [
-                                    _statBlock(
+                                LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    final stackVertically =
+                                        constraints.maxWidth < 340;
+                                    final currentBlock = _statBlock(
                                       context,
                                       icon: Icons.play_arrow_rounded,
                                       value: QueueTurnDisplay.currentQueueValue(
@@ -204,8 +204,8 @@ class _ActiveBookingsListState extends State<ActiveBookingsList> {
                                       ),
                                       label: LocaleKeys.current_number.trnsltd,
                                       color: colorScheme.primary,
-                                    ),
-                                    _statBlock(
+                                    );
+                                    final beforeBlock = _statBlock(
                                       context,
                                       icon: Icons.people_rounded,
                                       value: QueueTurnDisplay.beforeYouValue(
@@ -219,8 +219,25 @@ class _ActiveBookingsListState extends State<ActiveBookingsList> {
                                       color: isHighlight
                                           ? Colors.green
                                           : colorScheme.secondary,
-                                    ),
-                                  ],
+                                    );
+
+                                    if (stackVertically) {
+                                      return Column(
+                                        children: [
+                                          currentBlock,
+                                          const SizedBox(height: 16),
+                                          beforeBlock,
+                                        ],
+                                      );
+                                    }
+
+                                    return Row(
+                                      children: [
+                                        Expanded(child: currentBlock),
+                                        Expanded(child: beforeBlock),
+                                      ],
+                                    );
+                                  },
                                 ),
                                 if (queue.booking.id != null) ...[
                                   const SizedBox(height: 16),
@@ -277,33 +294,42 @@ class _ActiveBookingsListState extends State<ActiveBookingsList> {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Column(
-      children: [
-        Container(
-          height: 50,
-          width: 50,
-          decoration: BoxDecoration(
-            color: color.withOpacity(.15),
-            shape: BoxShape.circle,
+    return SizedBox(
+      width: double.infinity,
+      child: Column(
+        children: [
+          Container(
+            height: 50,
+            width: 50,
+            decoration: BoxDecoration(
+              color: color.withOpacity(.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 24),
           ),
-          child: Icon(icon, color: color, size: 24),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          value,
-          style: textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: color,
+          const SizedBox(height: 6),
+          Text(
+            value,
+            textAlign: TextAlign.center,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
           ),
-        ),
-        Text(
-          label,
-          style: textTheme.bodySmall?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-            fontSize: 11,
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              fontSize: 11,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

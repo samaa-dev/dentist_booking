@@ -14,12 +14,15 @@ part 'queue_state.dart';
 
 class QueueCubit extends Cubit<QueueState> {
   static const _activeQueueRefreshDebounce = Duration(milliseconds: 400);
+  static const _activeQueuePollInterval = Duration(seconds: 20);
 
   final QueueRepo _queueRepo;
 
   StreamSubscription<List<Map<String, dynamic>>>? _bookingsSub;
   StreamSubscription<List<Map<String, dynamic>>>? _queueStateSub;
   Timer? _refreshDebounceTimer;
+  Timer? _pollTimer;
+  bool _loadInFlight = false;
 
   QueueCubit({
     required QueueRepo queueRepo,
@@ -56,11 +59,34 @@ class QueueCubit extends Cubit<QueueState> {
     });
   }
 
+  /// Call when the app returns to foreground so queue numbers catch up
+  /// even if a realtime event was missed while backgrounded.
+  void onAppResumed() {
+    if (isClosed) return;
+    debugPrint('Active booking: app resumed → refreshing queue');
+    loadActiveBookingQueue();
+  }
+
+  void _syncPollTimer({required bool hasActiveQueues}) {
+    if (!hasActiveQueues) {
+      _pollTimer?.cancel();
+      _pollTimer = null;
+      return;
+    }
+    if (_pollTimer != null) return;
+    _pollTimer = Timer.periodic(_activeQueuePollInterval, (_) {
+      if (isClosed) return;
+      debugPrint('Active booking: poll tick → refreshing queue');
+      loadActiveBookingQueue();
+    });
+  }
+
   @override
   Future<void> close() {
     _bookingsSub?.cancel();
     _queueStateSub?.cancel();
     _refreshDebounceTimer?.cancel();
+    _pollTimer?.cancel();
     return super.close();
   }
 
@@ -78,11 +104,19 @@ class QueueCubit extends Cubit<QueueState> {
   }
 
   Future<void> loadActiveBookingQueue() async {
+    if (_loadInFlight || isClosed) return;
+    _loadInFlight = true;
     try {
       final queues = await _queueRepo.getAllActiveBookingQueues();
+      if (isClosed) return;
       emit(QueueState.activeQueueLoaded(queues));
+      _syncPollTimer(hasActiveQueues: queues.isNotEmpty);
     } catch (e) {
+      if (isClosed) return;
       emit(QueueState.activeQueueLoaded([]));
+      _syncPollTimer(hasActiveQueues: false);
+    } finally {
+      _loadInFlight = false;
     }
   }
 }

@@ -12,7 +12,6 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/enum/enum.dart';
 import '../../../core/model/booking_status_model.dart';
-import '../../../core/util/calendar_date.dart';
 import '../../../core/util/queue_turn_display.dart';
 import '../blocs/booking_status/booking_status_cubit.dart';
 import 'active_bookings_list.dart';
@@ -87,7 +86,6 @@ class _BookingStatusPanelLayout extends StatelessWidget {
 
     final BookingShift? shift = status.shift;
     final bool isMorningShift = shift == BookingShift.morning;
-    final int? timeLeft = status.timeLeft;
 
     final statusColor = canBook
         ? colorScheme.primary
@@ -106,10 +104,6 @@ class _BookingStatusPanelLayout extends StatelessWidget {
         : (isMorningShift
               ? LocaleKeys.booking_morning.trnsltd
               : LocaleKeys.booking_evening.trnsltd);
-
-    final timeLeftText = (timeLeft != null && canBook)
-        ? CalendarDate.formatWaitTime(timeLeft, context)
-        : '';
 
     final String stoppedSubtitle = (stopReason != null && stopReason.isNotEmpty)
         ? stopReason
@@ -192,24 +186,6 @@ class _BookingStatusPanelLayout extends StatelessWidget {
                             color: colorScheme.onSurface.withOpacity(.8),
                           ),
                         ),
-
-                        if (timeLeftText.isNotEmpty) ...[
-                          const SizedBox(width: 16),
-                          Icon(
-                            HugeIcons.strokeRoundedHourglass,
-                            size: 18,
-                            color: colorScheme.primary,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            timeLeftText,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: textTheme.bodySmall!.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
                       ],
                     ),
                   ] else ...[
@@ -454,10 +430,10 @@ class _ActiveBookingPanel extends StatelessWidget {
           },
         ),
         const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _statBlock(
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final stackVertically = constraints.maxWidth < 340;
+            final currentBlock = _statBlock(
               context,
               icon: Icons.play_arrow_rounded,
               value: QueueTurnDisplay.currentQueueValue(
@@ -466,8 +442,8 @@ class _ActiveBookingPanel extends StatelessWidget {
               ),
               label: LocaleKeys.current_number.trnsltd,
               color: colorScheme.primary,
-            ),
-            _statBlock(
+            );
+            final beforeBlock = _statBlock(
               context,
               icon: Icons.people_rounded,
               value: QueueTurnDisplay.beforeYouValue(
@@ -479,8 +455,25 @@ class _ActiveBookingPanel extends StatelessWidget {
                 stats: queue.queueStats,
               ),
               color: isHighlight ? Colors.green : colorScheme.secondary,
-            ),
-          ],
+            );
+
+            if (stackVertically) {
+              return Column(
+                children: [
+                  currentBlock,
+                  const SizedBox(height: 16),
+                  beforeBlock,
+                ],
+              );
+            }
+
+            return Row(
+              children: [
+                Expanded(child: currentBlock),
+                Expanded(child: beforeBlock),
+              ],
+            );
+          },
         ),
         if (queue.booking.id != null) ...[
           const SizedBox(height: 16),
@@ -520,32 +513,41 @@ class _ActiveBookingPanel extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Column(
-      children: [
-        Container(
-          height: 60,
-          width: 60,
-          decoration: BoxDecoration(
-            color: color.withOpacity(.15),
-            shape: BoxShape.circle,
+    return SizedBox(
+      width: double.infinity,
+      child: Column(
+        children: [
+          Container(
+            height: 60,
+            width: 60,
+            decoration: BoxDecoration(
+              color: color.withOpacity(.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color),
           ),
-          child: Icon(icon, color: color),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          value,
-          style: textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: color,
+          const SizedBox(height: 6),
+          Text(
+            value,
+            textAlign: TextAlign.center,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
           ),
-        ),
-        Text(
-          label,
-          style: textTheme.bodySmall?.copyWith(
-            color: colorScheme.onSurfaceVariant,
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

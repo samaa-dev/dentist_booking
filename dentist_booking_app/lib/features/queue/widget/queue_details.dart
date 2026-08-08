@@ -180,37 +180,50 @@ class QueueDetails extends StatelessWidget {
       context,
       margin: const EdgeInsets.only(left: 18, right: 18, top: 18),
       padding: const EdgeInsets.all(18),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final stackVertically = constraints.maxWidth < 340;
+          final currentBlock = _statBlock(
+            context,
+            icon: Icons.play_arrow_rounded,
+            value: QueueTurnDisplay.currentQueueValue(
+              queue.queueStats,
+              shift: queue.booking.shift,
+            ),
+            label: LocaleKeys.current_number.trnsltd,
+            color: colorScheme.primary,
+          );
+          final beforeBlock = _statBlock(
+            context,
+            icon: Icons.people_rounded,
+            value: QueueTurnDisplay.beforeYouValue(
+              kind: turnKind,
+              stats: queue.queueStats,
+            ),
+            label: QueueTurnDisplay.beforeYouLabel(
+              kind: turnKind,
+              stats: queue.queueStats,
+            ),
+            color: isHighlight ? Colors.green : colorScheme.secondary,
+          );
+
+          if (stackVertically) {
+            return Column(
+              children: [
+                currentBlock,
+                const SizedBox(height: 16),
+                beforeBlock,
+              ],
+            );
+          }
+
+          return Row(
             children: [
-              _statBlock(
-                context,
-                icon: Icons.play_arrow_rounded,
-                value: QueueTurnDisplay.currentQueueValue(
-                  queue.queueStats,
-                  shift: queue.booking.shift,
-                ),
-                label: LocaleKeys.current_number.trnsltd,
-                color: colorScheme.primary,
-              ),
-              _statBlock(
-                context,
-                icon: Icons.people_rounded,
-                value: QueueTurnDisplay.beforeYouValue(
-                  kind: turnKind,
-                  stats: queue.queueStats,
-                ),
-                label: QueueTurnDisplay.beforeYouLabel(
-                  kind: turnKind,
-                  stats: queue.queueStats,
-                ),
-                color: isHighlight ? Colors.green : colorScheme.secondary,
-              ),
+              Expanded(child: currentBlock),
+              Expanded(child: beforeBlock),
             ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -442,32 +455,41 @@ class QueueDetails extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Column(
-      children: [
-        Container(
-          height: 60,
-          width: 60,
-          decoration: BoxDecoration(
-            color: color.withOpacity(.15),
-            shape: BoxShape.circle,
+    return SizedBox(
+      width: double.infinity,
+      child: Column(
+        children: [
+          Container(
+            height: 60,
+            width: 60,
+            decoration: BoxDecoration(
+              color: color.withOpacity(.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color),
           ),
-          child: Icon(icon, color: color),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          value,
-          style: textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: color,
+          const SizedBox(height: 6),
+          Text(
+            value,
+            textAlign: TextAlign.center,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
           ),
-        ),
-        Text(
-          label,
-          style: textTheme.bodySmall?.copyWith(
-            color: colorScheme.onSurfaceVariant,
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

@@ -59,10 +59,47 @@ class HomeScreen extends StatelessWidget {
             },
           );
         },
-        child: _HomeLayout(),
+        child: const _QueueCubitLifecycle(
+          child: _HomeLayout(),
+        ),
       ),
     );
   }
+}
+
+/// Refreshes active queue stats when the app returns from background.
+class _QueueCubitLifecycle extends StatefulWidget {
+  const _QueueCubitLifecycle({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_QueueCubitLifecycle> createState() => _QueueCubitLifecycleState();
+}
+
+class _QueueCubitLifecycleState extends State<_QueueCubitLifecycle>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    if (!mounted) return;
+    context.read<QueueCubit>().onAppResumed();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 class _HomeLayout extends StatelessWidget {
