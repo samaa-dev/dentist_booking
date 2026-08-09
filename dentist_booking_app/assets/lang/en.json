@@ -172,6 +172,9 @@
         }
     },
     "booking_closed_now": "Closed now",
+    "morning_shift_closed_today": "Morning shift is closed today",
+    "evening_shift_closed_today": "Evening shift is closed today",
+    "shift_closed_today": "This shift is closed today",
     "minutes": "minutes",
     "add_booking": "Add Booking",
     "booking_for_today": "Booking for today",

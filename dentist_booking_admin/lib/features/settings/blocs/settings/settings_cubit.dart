@@ -180,6 +180,24 @@ class SettingsCubit extends Cubit<SettingsState> {
     _pushTemporaryState();
   }
 
+  void updateMorningIsOpen(String id, bool val) {
+    workingHoursTMP = workingHoursTMP.map((d) {
+      if (d.id == id) return d.copyWith(morningIsOpen: val);
+      return d;
+    }).toList();
+
+    _pushTemporaryState();
+  }
+
+  void updateEveningIsOpen(String id, bool val) {
+    workingHoursTMP = workingHoursTMP.map((d) {
+      if (d.id == id) return d.copyWith(eveningIsOpen: val);
+      return d;
+    }).toList();
+
+    _pushTemporaryState();
+  }
+
   void updateMorningStart(String id, String val) {
     workingHoursTMP = workingHoursTMP.map((d) {
       if (d.id == id) return d.copyWith(morningStart: val);

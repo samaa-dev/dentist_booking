@@ -170,6 +170,9 @@ abstract class  LocaleKeys {
   static const Evening = 'Evening';
   static const Morning = 'Morning';
   static const Closed = 'Closed';
+  static const shift_period_open = 'shift_period_open';
+  static const shift_period_closed = 'shift_period_closed';
+  static const warning_both_shifts_closed = 'warning_both_shifts_closed';
   static const reset_settings = 'reset_settings';
   static const reset_settings_confirm = 'reset_settings_confirm';
   static const reset_settings_title = 'reset_settings_title';

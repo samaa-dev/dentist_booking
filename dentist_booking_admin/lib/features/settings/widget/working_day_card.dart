@@ -12,6 +12,8 @@ class WorkingDayCard extends StatelessWidget {
   final Function(String) onMorningEnd;
   final Function(String) onEveningStart;
   final Function(String) onEveningEnd;
+  final Function(bool) onMorningIsOpen;
+  final Function(bool) onEveningIsOpen;
 
   const WorkingDayCard({
     super.key,
@@ -21,6 +23,8 @@ class WorkingDayCard extends StatelessWidget {
     required this.onMorningEnd,
     required this.onEveningStart,
     required this.onEveningEnd,
+    required this.onMorningIsOpen,
+    required this.onEveningIsOpen,
   });
 
   @override
@@ -39,7 +43,6 @@ class WorkingDayCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ---------------- Day Header ----------------
           Row(
             children: [
               Text(
@@ -58,7 +61,6 @@ class WorkingDayCard extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          // If day is closed → hide the times
           if (!day.isOpen)
             Text(
               LocaleKeys.Closed.trnsltd,
@@ -68,89 +70,34 @@ class WorkingDayCard extends StatelessWidget {
             ),
 
           if (day.isOpen) ...[
+            if (!day.morningIsOpen && !day.eveningIsOpen) ...[
+              Text(
+                LocaleKeys.warning_both_shifts_closed.trnsltd,
+                style: textTheme.bodySmall!.copyWith(
+                  color: colors.error,
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
             const SizedBox(height: 10),
-
-            // ---------------- Morning Row ----------------
-            Row(
-              children: [
-                SizedBox(
-                  width: 80,
-                  child: Text(
-                    LocaleKeys.Morning.trnsltd,
-                    style: textTheme.bodyLarge,
-                  ),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: SmallTimeButton(
-                          value: day.morningStart ?? "08:00",
-                          onChanged: onMorningStart,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Builder(
-                        builder: (context) {
-                          final isRTL =
-                              Directionality.of(context) == TextDirection.rtl;
-                          final arrow = isRTL ? "←" : "→";
-
-                          return Text(
-                            arrow,
-                            style: textTheme.titleMedium,
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: SmallTimeButton(
-                          value: day.morningEnd ?? "12:00",
-                          onChanged: onMorningEnd,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+            _ShiftRow(
+              label: LocaleKeys.Morning.trnsltd,
+              isOpen: day.morningIsOpen,
+              start: day.morningStart ?? '08:00',
+              end: day.morningEnd ?? '12:00',
+              onToggleOpen: onMorningIsOpen,
+              onStart: onMorningStart,
+              onEnd: onMorningEnd,
             ),
-
             const SizedBox(height: 20),
-
-            // ---------------- Evening Row ----------------
-            Row(
-              children: [
-                SizedBox(
-                  width: 80,
-                  child: Text(
-                    LocaleKeys.Evening.trnsltd,
-                    style: textTheme.bodyLarge,
-                  ),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: SmallTimeButton(
-                          value: day.eveningStart ?? "14:00",
-                          onChanged: onEveningStart,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text("→", style: textTheme.titleMedium),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: SmallTimeButton(
-                          value: day.eveningEnd ?? "18:00",
-                          onChanged: onEveningEnd,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+            _ShiftRow(
+              label: LocaleKeys.Evening.trnsltd,
+              isOpen: day.eveningIsOpen,
+              start: day.eveningStart ?? '14:00',
+              end: day.eveningEnd ?? '18:00',
+              onToggleOpen: onEveningIsOpen,
+              onStart: onEveningStart,
+              onEnd: onEveningEnd,
             ),
           ],
         ],
@@ -175,7 +122,83 @@ class WorkingDayCard extends StatelessWidget {
       case 7:
         return LocaleKeys.Friday.trnsltd;
       default:
-        return "";
+        return '';
     }
+  }
+}
+
+class _ShiftRow extends StatelessWidget {
+  const _ShiftRow({
+    required this.label,
+    required this.isOpen,
+    required this.start,
+    required this.end,
+    required this.onToggleOpen,
+    required this.onStart,
+    required this.onEnd,
+  });
+
+  final String label;
+  final bool isOpen;
+  final String start;
+  final String end;
+  final ValueChanged<bool> onToggleOpen;
+  final ValueChanged<String> onStart;
+  final ValueChanged<String> onEnd;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final colors = Theme.of(context).colorScheme;
+    final isRTL = Directionality.of(context) == TextDirection.rtl;
+    final arrow = isRTL ? '←' : '→';
+
+    return Opacity(
+      opacity: isOpen ? 1 : 0.45,
+      child: Row(
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(label, style: textTheme.bodyLarge),
+          ),
+          Switch(
+            value: isOpen,
+            onChanged: onToggleOpen,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: IgnorePointer(
+              ignoring: !isOpen,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SmallTimeButton(
+                      value: start,
+                      onChanged: onStart,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(arrow, style: textTheme.titleMedium),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: SmallTimeButton(
+                      value: end,
+                      onChanged: onEnd,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (!isOpen) ...[
+            const SizedBox(width: 8),
+            Text(
+              LocaleKeys.shift_period_closed.trnsltd,
+              style: textTheme.labelSmall?.copyWith(color: colors.error),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }

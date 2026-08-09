@@ -29,6 +29,10 @@ class WorkingHoursTab extends StatelessWidget {
               onEveningStart: (val) => cubit.updateEveningStart(day.id, val),
 
               onEveningEnd: (val) => cubit.updateEveningEnd(day.id, val),
+
+              onMorningIsOpen: (val) => cubit.updateMorningIsOpen(day.id, val),
+
+              onEveningIsOpen: (val) => cubit.updateEveningIsOpen(day.id, val),
             ),
         ],
       ),

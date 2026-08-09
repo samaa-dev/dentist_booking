@@ -13,6 +13,8 @@ class WorkingDayCard extends StatelessWidget {
   final Function(String) onMorningEnd;
   final Function(String) onEveningStart;
   final Function(String) onEveningEnd;
+  final Function(bool) onMorningIsOpen;
+  final Function(bool) onEveningIsOpen;
 
   const WorkingDayCard({
     super.key,
@@ -22,6 +24,8 @@ class WorkingDayCard extends StatelessWidget {
     required this.onMorningEnd,
     required this.onEveningStart,
     required this.onEveningEnd,
+    required this.onMorningIsOpen,
+    required this.onEveningIsOpen,
   });
 
   @override
@@ -91,12 +95,21 @@ class WorkingDayCard extends StatelessWidget {
             ),
           ],
           if (day.isOpen) ...[
+            if (!day.morningIsOpen && !day.eveningIsOpen) ...[
+              const SizedBox(height: 8),
+              Text(
+                LocaleKeys.warning_both_shifts_closed.trnsltd,
+                style: textTheme.bodySmall?.copyWith(color: colors.error),
+              ),
+            ],
             const SizedBox(height: 14),
             _ShiftBlock(
               title: LocaleKeys.Morning.trnsltd,
               icon: HugeIcons.strokeRoundedSun03,
+              isOpen: day.morningIsOpen,
               start: day.morningStart ?? '08:00',
               end: day.morningEnd ?? '12:00',
+              onToggleOpen: onMorningIsOpen,
               onStart: onMorningStart,
               onEnd: onMorningEnd,
               isRtl: isRtl,
@@ -105,8 +118,10 @@ class WorkingDayCard extends StatelessWidget {
             _ShiftBlock(
               title: LocaleKeys.Evening.trnsltd,
               icon: HugeIcons.strokeRoundedMoon01,
+              isOpen: day.eveningIsOpen,
               start: day.eveningStart ?? '14:00',
               end: day.eveningEnd ?? '18:00',
+              onToggleOpen: onEveningIsOpen,
               onStart: onEveningStart,
               onEnd: onEveningEnd,
               isRtl: isRtl,
@@ -143,8 +158,10 @@ class _ShiftBlock extends StatelessWidget {
   const _ShiftBlock({
     required this.title,
     required this.icon,
+    required this.isOpen,
     required this.start,
     required this.end,
+    required this.onToggleOpen,
     required this.onStart,
     required this.onEnd,
     required this.isRtl,
@@ -152,8 +169,10 @@ class _ShiftBlock extends StatelessWidget {
 
   final String title;
   final IconData icon;
+  final bool isOpen;
   final String start;
   final String end;
+  final ValueChanged<bool> onToggleOpen;
   final ValueChanged<String> onStart;
   final ValueChanged<String> onEnd;
   final bool isRtl;
@@ -163,57 +182,78 @@ class _ShiftBlock extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: colors.primary.withOpacity(0.06),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 18, color: colors.primary),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: colors.primary,
+    return Opacity(
+      opacity: isOpen ? 1 : 0.5,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: colors.primary.withOpacity(0.06),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 18, color: colors.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: colors.primary,
+                    ),
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: SmallTimeButton(
-                  value: start,
-                  onChanged: onStart,
+                Text(
+                  isOpen
+                      ? LocaleKeys.shift_period_open.trnsltd
+                      : LocaleKeys.shift_period_closed.trnsltd,
+                  style: textTheme.labelSmall?.copyWith(
+                    color: isOpen ? colors.primary : colors.error,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Icon(
-                  isRtl
-                      ? HugeIcons.strokeRoundedArrowLeft01
-                      : HugeIcons.strokeRoundedArrowRight01,
-                  size: 18,
-                  color: colors.onSurface.withOpacity(0.55),
+                Switch.adaptive(
+                  value: isOpen,
+                  onChanged: onToggleOpen,
                 ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            IgnorePointer(
+              ignoring: !isOpen,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SmallTimeButton(
+                      value: start,
+                      onChanged: onStart,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Icon(
+                      isRtl
+                          ? HugeIcons.strokeRoundedArrowLeft01
+                          : HugeIcons.strokeRoundedArrowRight01,
+                      size: 18,
+                      color: colors.onSurface.withOpacity(0.55),
+                    ),
+                  ),
+                  Expanded(
+                    child: SmallTimeButton(
+                      value: end,
+                      onChanged: onEnd,
+                    ),
+                  ),
+                ],
               ),
-              Expanded(
-                child: SmallTimeButton(
-                  value: end,
-                  onChanged: onEnd,
-                ),
-              ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }

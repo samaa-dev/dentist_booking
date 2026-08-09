@@ -72,6 +72,10 @@ class BookingCreateRepo {
         return LocaleKeys.day_not_exist.trnsltd;
       case "clinic_closed":
         return LocaleKeys.clinic_closed.trnsltd;
+      case "morning_closed":
+        return LocaleKeys.morning_shift_closed_today.trnsltd;
+      case "evening_closed":
+        return LocaleKeys.evening_shift_closed_today.trnsltd;
       case "booking_disabled":
         return LocaleKeys.booking_disabled.trnsltd;
       case "invalid_working_hours":

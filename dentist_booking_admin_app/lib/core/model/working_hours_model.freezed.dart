@@ -34,6 +34,10 @@ mixin _$WorkingHoursModel {
   String? get eveningStart => throw _privateConstructorUsedError;
   @JsonKey(name: "evening_end")
   String? get eveningEnd => throw _privateConstructorUsedError;
+  @JsonKey(name: "morning_is_open")
+  bool get morningIsOpen => throw _privateConstructorUsedError;
+  @JsonKey(name: "evening_is_open")
+  bool get eveningIsOpen => throw _privateConstructorUsedError;
   @JsonKey(name: "created_at")
   DateTime get createdAt => throw _privateConstructorUsedError;
   @JsonKey(name: "updated_at")
@@ -64,6 +68,8 @@ abstract class $WorkingHoursModelCopyWith<$Res> {
     @JsonKey(name: "morning_end") String? morningEnd,
     @JsonKey(name: "evening_start") String? eveningStart,
     @JsonKey(name: "evening_end") String? eveningEnd,
+    @JsonKey(name: "morning_is_open") bool morningIsOpen,
+    @JsonKey(name: "evening_is_open") bool eveningIsOpen,
     @JsonKey(name: "created_at") DateTime createdAt,
     @JsonKey(name: "updated_at") DateTime updatedAt,
   });
@@ -91,6 +97,8 @@ class _$WorkingHoursModelCopyWithImpl<$Res, $Val extends WorkingHoursModel>
     Object? morningEnd = freezed,
     Object? eveningStart = freezed,
     Object? eveningEnd = freezed,
+    Object? morningIsOpen = null,
+    Object? eveningIsOpen = null,
     Object? createdAt = null,
     Object? updatedAt = null,
   }) {
@@ -124,6 +132,14 @@ class _$WorkingHoursModelCopyWithImpl<$Res, $Val extends WorkingHoursModel>
                 ? _value.eveningEnd
                 : eveningEnd // ignore: cast_nullable_to_non_nullable
                       as String?,
+            morningIsOpen: null == morningIsOpen
+                ? _value.morningIsOpen
+                : morningIsOpen // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            eveningIsOpen: null == eveningIsOpen
+                ? _value.eveningIsOpen
+                : eveningIsOpen // ignore: cast_nullable_to_non_nullable
+                      as bool,
             createdAt: null == createdAt
                 ? _value.createdAt
                 : createdAt // ignore: cast_nullable_to_non_nullable
@@ -155,6 +171,8 @@ abstract class _$$WorkingHoursModelImplCopyWith<$Res>
     @JsonKey(name: "morning_end") String? morningEnd,
     @JsonKey(name: "evening_start") String? eveningStart,
     @JsonKey(name: "evening_end") String? eveningEnd,
+    @JsonKey(name: "morning_is_open") bool morningIsOpen,
+    @JsonKey(name: "evening_is_open") bool eveningIsOpen,
     @JsonKey(name: "created_at") DateTime createdAt,
     @JsonKey(name: "updated_at") DateTime updatedAt,
   });
@@ -181,6 +199,8 @@ class __$$WorkingHoursModelImplCopyWithImpl<$Res>
     Object? morningEnd = freezed,
     Object? eveningStart = freezed,
     Object? eveningEnd = freezed,
+    Object? morningIsOpen = null,
+    Object? eveningIsOpen = null,
     Object? createdAt = null,
     Object? updatedAt = null,
   }) {
@@ -214,6 +234,14 @@ class __$$WorkingHoursModelImplCopyWithImpl<$Res>
             ? _value.eveningEnd
             : eveningEnd // ignore: cast_nullable_to_non_nullable
                   as String?,
+        morningIsOpen: null == morningIsOpen
+            ? _value.morningIsOpen
+            : morningIsOpen // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        eveningIsOpen: null == eveningIsOpen
+            ? _value.eveningIsOpen
+            : eveningIsOpen // ignore: cast_nullable_to_non_nullable
+                  as bool,
         createdAt: null == createdAt
             ? _value.createdAt
             : createdAt // ignore: cast_nullable_to_non_nullable
@@ -238,6 +266,8 @@ class _$WorkingHoursModelImpl implements _WorkingHoursModel {
     @JsonKey(name: "morning_end") this.morningEnd,
     @JsonKey(name: "evening_start") this.eveningStart,
     @JsonKey(name: "evening_end") this.eveningEnd,
+    @JsonKey(name: "morning_is_open") this.morningIsOpen = true,
+    @JsonKey(name: "evening_is_open") this.eveningIsOpen = true,
     @JsonKey(name: "created_at") required this.createdAt,
     @JsonKey(name: "updated_at") required this.updatedAt,
   });
@@ -266,6 +296,12 @@ class _$WorkingHoursModelImpl implements _WorkingHoursModel {
   @JsonKey(name: "evening_end")
   final String? eveningEnd;
   @override
+  @JsonKey(name: "morning_is_open")
+  final bool morningIsOpen;
+  @override
+  @JsonKey(name: "evening_is_open")
+  final bool eveningIsOpen;
+  @override
   @JsonKey(name: "created_at")
   final DateTime createdAt;
   @override
@@ -274,7 +310,7 @@ class _$WorkingHoursModelImpl implements _WorkingHoursModel {
 
   @override
   String toString() {
-    return 'WorkingHoursModel(id: $id, dayOfWeek: $dayOfWeek, isOpen: $isOpen, morningStart: $morningStart, morningEnd: $morningEnd, eveningStart: $eveningStart, eveningEnd: $eveningEnd, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'WorkingHoursModel(id: $id, dayOfWeek: $dayOfWeek, isOpen: $isOpen, morningStart: $morningStart, morningEnd: $morningEnd, eveningStart: $eveningStart, eveningEnd: $eveningEnd, morningIsOpen: $morningIsOpen, eveningIsOpen: $eveningIsOpen, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -294,6 +330,10 @@ class _$WorkingHoursModelImpl implements _WorkingHoursModel {
                 other.eveningStart == eveningStart) &&
             (identical(other.eveningEnd, eveningEnd) ||
                 other.eveningEnd == eveningEnd) &&
+            (identical(other.morningIsOpen, morningIsOpen) ||
+                other.morningIsOpen == morningIsOpen) &&
+            (identical(other.eveningIsOpen, eveningIsOpen) ||
+                other.eveningIsOpen == eveningIsOpen) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
@@ -311,6 +351,8 @@ class _$WorkingHoursModelImpl implements _WorkingHoursModel {
     morningEnd,
     eveningStart,
     eveningEnd,
+    morningIsOpen,
+    eveningIsOpen,
     createdAt,
     updatedAt,
   );
@@ -341,6 +383,8 @@ abstract class _WorkingHoursModel implements WorkingHoursModel {
     @JsonKey(name: "morning_end") final String? morningEnd,
     @JsonKey(name: "evening_start") final String? eveningStart,
     @JsonKey(name: "evening_end") final String? eveningEnd,
+    @JsonKey(name: "morning_is_open") final bool morningIsOpen,
+    @JsonKey(name: "evening_is_open") final bool eveningIsOpen,
     @JsonKey(name: "created_at") required final DateTime createdAt,
     @JsonKey(name: "updated_at") required final DateTime updatedAt,
   }) = _$WorkingHoursModelImpl;
@@ -368,6 +412,12 @@ abstract class _WorkingHoursModel implements WorkingHoursModel {
   @override
   @JsonKey(name: "evening_end")
   String? get eveningEnd;
+  @override
+  @JsonKey(name: "morning_is_open")
+  bool get morningIsOpen;
+  @override
+  @JsonKey(name: "evening_is_open")
+  bool get eveningIsOpen;
   @override
   @JsonKey(name: "created_at")
   DateTime get createdAt;

@@ -157,6 +157,9 @@ abstract class  LocaleKeys {
   static const wait_time_second = 'wait_time.second';
   static const wait_time = 'wait_time';
   static const booking_closed_now = 'booking_closed_now';
+  static const morning_shift_closed_today = 'morning_shift_closed_today';
+  static const evening_shift_closed_today = 'evening_shift_closed_today';
+  static const shift_closed_today = 'shift_closed_today';
   static const minutes = 'minutes';
   static const add_booking = 'add_booking';
   static const booking_for_today = 'booking_for_today';

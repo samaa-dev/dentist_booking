@@ -105,9 +105,18 @@ class _BookingStatusPanelLayout extends StatelessWidget {
               ? LocaleKeys.booking_morning.trnsltd
               : LocaleKeys.booking_evening.trnsltd);
 
-    final String stoppedSubtitle = (stopReason != null && stopReason.isNotEmpty)
-        ? stopReason
-        : LocaleKeys.booking_disabled.trnsltd;
+    final String stoppedSubtitle;
+    if (!isBookingEnabled) {
+      stoppedSubtitle = (stopReason != null && stopReason.isNotEmpty)
+          ? stopReason
+          : LocaleKeys.booking_disabled.trnsltd;
+    } else if (status.shiftClosed == BookingShift.morning) {
+      stoppedSubtitle = LocaleKeys.morning_shift_closed_today.trnsltd;
+    } else if (status.shiftClosed == BookingShift.evening) {
+      stoppedSubtitle = LocaleKeys.evening_shift_closed_today.trnsltd;
+    } else {
+      stoppedSubtitle = LocaleKeys.booking_closed_now.trnsltd;
+    }
 
     return TweenAnimationBuilder<double>(
       duration: const Duration(milliseconds: 600),
@@ -204,9 +213,7 @@ class _BookingStatusPanelLayout extends StatelessWidget {
                   if (!canBook) ...[
                     const SizedBox(height: 10),
                     Text(
-                      !isBookingEnabled
-                          ? stoppedSubtitle
-                          : LocaleKeys.booking_closed_now.trnsltd,
+                      stoppedSubtitle,
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                       style: textTheme.bodySmall!.copyWith(

@@ -172,6 +172,9 @@
     }
   },
   "booking_closed_now": "مغلق الآن",
+  "morning_shift_closed_today": "الفترة الصباحية مغلقة اليوم",
+  "evening_shift_closed_today": "الفترة المسائية مغلقة اليوم",
+  "shift_closed_today": "هذه الفترة مغلقة اليوم",
   "minutes": "دقيقة",
   "add_booking": "اضافة حجز",
   "booking_for_today": "حجز موعد اليوم",

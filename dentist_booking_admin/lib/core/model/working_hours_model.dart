@@ -16,6 +16,9 @@ class WorkingHoursModel with _$WorkingHoursModel {
     @JsonKey(name: "evening_start") String? eveningStart,
     @JsonKey(name: "evening_end") String? eveningEnd,
 
+    @JsonKey(name: "morning_is_open") @Default(true) bool morningIsOpen,
+    @JsonKey(name: "evening_is_open") @Default(true) bool eveningIsOpen,
+
     @JsonKey(name: "created_at") required DateTime createdAt,
     @JsonKey(name: "updated_at") required DateTime updatedAt,
   }) = _WorkingHoursModel;

@@ -1,0 +1,1 @@
+-- See also add_per_shift_is_open_to_working_hours.sql (full migration).
