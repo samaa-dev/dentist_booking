@@ -1,3 +1,4 @@
+import 'package:dentist_booking_tv/core/constants/ads_display_constants.dart';
 import 'package:dentist_booking_tv/core/utils/tv_scale.dart';
 import 'package:dentist_booking_tv/features/display/blocs/tv_display_cubit.dart';
 import 'package:dentist_booking_tv/features/display/blocs/tv_display_state.dart';
@@ -59,14 +60,13 @@ class _TvDisplayScreenState extends State<TvDisplayScreen> {
           if (state is TvDisplayLoaded) {
             final content = Column(
               children: [
-                Expanded(
-                  flex: 5,
+                AspectRatio(
+                  aspectRatio: AdsDisplayConstants.adsCarouselAspectRatio,
                   child: AdsCarouselTv(
                     ads: state.ads,
                   ),
                 ),
                 Expanded(
-                  flex: 2,
                   child: Container(
                     width: double.infinity,
                     decoration: BoxDecoration(

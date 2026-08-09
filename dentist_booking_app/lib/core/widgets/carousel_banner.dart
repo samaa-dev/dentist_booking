@@ -29,59 +29,65 @@ class _CarouselBannerState extends State<CarouselBanner> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        CarouselSlider(
-          carouselController: _carouselController,
-          options: CarouselOptions(
-            autoPlay: !_isVideoPlaying,
-            autoPlayInterval: const Duration(seconds: 5),
-            viewportFraction: 1.0,
-            enlargeCenterPage: true,
-            onPageChanged: (index, reason) {
-              setState(() {
-                _currentIndex = index;
-                if (reason == CarouselPageChangedReason.manual) {
-                  _isVideoPlaying = false;
-                }
-              });
-            },
-          ),
-          items: widget.imageUrls.map((url) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: _isYoutube(url)
-                  ? _YoutubeVideoWidget(
-                      videoUrl: url,
-                      onVideoStateChange: (isPlaying) {
-                        if (_isVideoPlaying != isPlaying) {
-                          setState(() => _isVideoPlaying = isPlaying);
-                        }
-                      },
-                      onVideoEnd: () {
-                        setState(() => _isVideoPlaying = false);
-                        _carouselController.nextPage(
-                          duration: const Duration(milliseconds: 800),
-                          curve: Curves.fastOutSlowIn,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            Positioned.fill(
+              child: CarouselSlider(
+                carouselController: _carouselController,
+                options: CarouselOptions(
+                  height: constraints.maxHeight,
+                  autoPlay: !_isVideoPlaying,
+                  autoPlayInterval: const Duration(seconds: 5),
+                  viewportFraction: 1.0,
+                  enlargeCenterPage: false,
+                  onPageChanged: (index, reason) {
+                    setState(() {
+                      _currentIndex = index;
+                      if (reason == CarouselPageChangedReason.manual) {
+                        _isVideoPlaying = false;
+                      }
+                    });
+                  },
+                ),
+                items: widget.imageUrls.map((url) {
+                  return _isYoutube(url)
+                      ? _YoutubeVideoWidget(
+                          videoUrl: url,
+                          onVideoStateChange: (isPlaying) {
+                            if (_isVideoPlaying != isPlaying) {
+                              setState(() => _isVideoPlaying = isPlaying);
+                            }
+                          },
+                          onVideoEnd: () {
+                            setState(() => _isVideoPlaying = false);
+                            _carouselController.nextPage(
+                              duration: const Duration(milliseconds: 800),
+                              curve: Curves.fastOutSlowIn,
+                            );
+                          },
+                        )
+                      : RoundedImage(
+                          onPressed: () {
+                            if (widget.onTap != null) {
+                              widget.onTap!(widget.imageUrls.indexOf(url));
+                            }
+                          },
+                          borderRadius: 0,
+                          height: constraints.maxHeight,
+                          width: double.infinity,
+                          isNetworkImage: true,
+                          imageUrl: url,
                         );
-                      },
-                    )
-                  : RoundedImage(
-                      onPressed: () {
-                        if (widget.onTap != null) {
-                          widget.onTap!(widget.imageUrls.indexOf(url));
-                        }
-                      },
-                      borderRadius: 16,
-                      isNetworkImage: true,
-                      imageUrl: url,
-                    ),
-            );
-          }).toList(),
-        ),
-        _buildIndicators(colorScheme),
-      ],
+                }).toList(),
+              ),
+            ),
+            _buildIndicators(colorScheme),
+          ],
+        );
+      },
     );
   }
 
@@ -163,7 +169,7 @@ class _YoutubeVideoWidgetState extends State<_YoutubeVideoWidget> {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.zero,
       child: YoutubePlayer(
         controller: _controller,
         showVideoProgressIndicator: true,
