@@ -5,8 +5,10 @@ import 'package:dentist_booking_admin_app/core/extensions/os_extensions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/model/booking_model.dart';
+import '../../../../core/model/profile_model.dart';
 import '../../../../generated/locale_keys.g.dart';
 import '../../repo/booking_repo.dart';
 
@@ -15,6 +17,7 @@ part 'booking_state.dart';
 
 class BookingCubit extends Cubit<BookingState> {
   final BookingRepo _bookingRepo;
+  final SupabaseClient _client;
 
   StreamSubscription<List<Map<String, dynamic>>>? _bookingsSub;
   Timer? _searchDebounce;
@@ -26,8 +29,15 @@ class BookingCubit extends Cubit<BookingState> {
   String _searchQuery = '';
   BookingDateScope _dateScope = BookingDateScope.today;
 
-  BookingCubit({required BookingRepo bookingRepo})
-      : _bookingRepo = bookingRepo,
+  /// Keeps last successful bookings list so patient-picker states
+  /// do not wipe the reservations UI when navigating back.
+  List<BookingModel> _lastBookings = const [];
+
+  BookingCubit({
+    required BookingRepo bookingRepo,
+    required SupabaseClient client,
+  })  : _bookingRepo = bookingRepo,
+        _client = client,
         super(const BookingState.initial()) {
     _applyDateScope(BookingDateScope.today);
     listenBookings();
@@ -84,10 +94,89 @@ class BookingCubit extends Cubit<BookingState> {
         endDate: _endDate,
         searchQuery: _searchQuery,
       );
+      _lastBookings = bookingList;
       emit(BookingState.loaded(bookingList));
     } catch (e) {
       debugPrint('Error loading bookings: $e');
       emit(BookingState.error(LocaleKeys.error_loading_bookings.trnsltd));
+    }
+  }
+
+  Future<void> getAllPatients() async {
+    emit(const BookingState.loadingPatients());
+    try {
+      final patientList = await _bookingRepo.getAllPatients();
+      emit(BookingState.loadedPatients(patientList));
+    } catch (e) {
+      debugPrint('Error loading patients: $e');
+      emit(
+        BookingState.errorPatients(LocaleKeys.error_loading_patients.trnsltd),
+      );
+    }
+  }
+
+  Future<void> createBooking(BookingModel booking) async {
+    emit(const BookingState.loadingbooking());
+
+    try {
+      final updatedBooking = booking.copyWith(
+        cancelledBy: booking.cancelledBy == 'SESSION_USER_ID'
+            ? _client.auth.currentUser?.id
+            : null,
+        bookingCreatedBy: _client.auth.currentUser?.id,
+      );
+
+      final created = await _bookingRepo.createBooking(updatedBooking);
+
+      emit(BookingState.successAddBooking(created));
+
+      // Refresh list with current filters (realtime may also fire).
+      await getBookingsWithFilters();
+    } catch (e) {
+      debugPrint('Create booking error: $e');
+      emit(
+        BookingState.errorAddBooking(
+          e.toString().replaceFirst(
+            'Exception: Failed to create booking: Exception: ',
+            '',
+          ),
+        ),
+      );
+      // Restore previous list so the screen is not stuck on an error-only state.
+      if (_lastBookings.isNotEmpty) {
+        emit(BookingState.loaded(_lastBookings));
+      }
+    }
+  }
+
+  Future<void> updateBooking(BookingModel booking) async {
+    emit(const BookingState.loadingbooking());
+
+    try {
+      final updatedBooking = booking.copyWith(
+        cancelledBy: booking.cancelledBy == 'SESSION_USER_ID'
+            ? _client.auth.currentUser?.id
+            : null,
+        bookingCreatedBy: _client.auth.currentUser?.id,
+      );
+
+      final updated = await _bookingRepo.updateBooking(updatedBooking);
+
+      emit(BookingState.successUpdateBooking(updated));
+      await getBookingsWithFilters();
+    } catch (e) {
+      debugPrint('Update booking error: $e');
+      emit(
+        BookingState.errorUpdateBooking(
+          e.toString().replaceFirst(
+            'Exception: Failed to update booking: Exception: ',
+            '',
+          ),
+        ),
+      );
+      if (_lastBookings.isNotEmpty) {
+        emit(BookingState.loaded(_lastBookings));
+      }
     }
   }
 

@@ -1,5 +1,4 @@
-import 'dart:ui';
-
+import 'package:dentist_booking_app/core/enum/enum.dart';
 import 'package:dentist_booking_app/core/extensions/os_extensions.dart';
 import 'package:dentist_booking_app/features/auth/blocs/auth/auth_cubit.dart';
 import 'package:dentist_booking_app/features/booking/widgets/cancel_booking_sheet.dart';
@@ -54,8 +53,13 @@ class _ActiveBookingsListState extends State<ActiveBookingsList> {
             final turnKind = QueueTurnDisplay.resolve(
               stats: queue.queueStats,
               patientQueueNumber: queue.booking.queueNumber,
+              bookingStatus: queue.booking.bookingStatus,
             );
             final isHighlight = QueueTurnDisplay.isHighlightTurn(turnKind);
+            final isCalled = turnKind == QueueTurnKind.passed;
+            final canCancel =
+                queue.booking.bookingStatus == BookingStatus.pending ||
+                    queue.booking.bookingStatus == BookingStatus.confirmed;
 
             return TweenAnimationBuilder<double>(
               duration: const Duration(milliseconds: 300),
@@ -71,12 +75,17 @@ class _ActiveBookingsListState extends State<ActiveBookingsList> {
                     color: colorScheme.surface.withOpacity(0.10),
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: colorScheme.primary.withOpacity(.15),
+                      color: isCalled
+                          ? colorScheme.secondary.withOpacity(.35)
+                          : colorScheme.primary.withOpacity(.15),
                       width: 1.5,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: colorScheme.primary.withOpacity(.10),
+                        color: (isCalled
+                                ? colorScheme.secondary
+                                : colorScheme.primary)
+                            .withOpacity(.10),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -97,12 +106,19 @@ class _ActiveBookingsListState extends State<ActiveBookingsList> {
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: colorScheme.primary.withOpacity(.15),
+                                  color: (isCalled
+                                          ? colorScheme.secondary
+                                          : colorScheme.primary)
+                                      .withOpacity(.15),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Icon(
-                                  Icons.confirmation_number_rounded,
-                                  color: colorScheme.primary,
+                                  isCalled
+                                      ? Icons.check_circle_rounded
+                                      : Icons.confirmation_number_rounded,
+                                  color: isCalled
+                                      ? colorScheme.secondary
+                                      : colorScheme.primary,
                                   size: 20,
                                 ),
                               ),
@@ -144,7 +160,15 @@ class _ActiveBookingsListState extends State<ActiveBookingsList> {
                                       },
                                     ),
                                     const SizedBox(height: 4),
-                                    if (queue.booking.queueNumber != null)
+                                    if (isCalled)
+                                      Text(
+                                        LocaleKeys.you_already_called.trnsltd,
+                                        style: textTheme.bodySmall?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: colorScheme.secondary,
+                                        ),
+                                      )
+                                    else if (queue.booking.queueNumber != null)
                                       Row(
                                         children: [
                                           Text(
@@ -169,7 +193,9 @@ class _ActiveBookingsListState extends State<ActiveBookingsList> {
                                 isExpanded
                                     ? Icons.keyboard_arrow_up_rounded
                                     : Icons.keyboard_arrow_down_rounded,
-                                color: colorScheme.primary,
+                                color: isCalled
+                                    ? colorScheme.secondary
+                                    : colorScheme.primary,
                               ),
                             ],
                           ),
@@ -207,7 +233,9 @@ class _ActiveBookingsListState extends State<ActiveBookingsList> {
                                     );
                                     final beforeBlock = _statBlock(
                                       context,
-                                      icon: Icons.people_rounded,
+                                      icon: isCalled
+                                          ? Icons.check_circle_rounded
+                                          : Icons.people_rounded,
                                       value: QueueTurnDisplay.beforeYouValue(
                                         kind: turnKind,
                                         stats: queue.queueStats,
@@ -239,7 +267,7 @@ class _ActiveBookingsListState extends State<ActiveBookingsList> {
                                     );
                                   },
                                 ),
-                                if (queue.booking.id != null) ...[
+                                if (canCancel && queue.booking.id != null) ...[
                                   const SizedBox(height: 16),
                                   SizedBox(
                                     width: double.infinity,

@@ -19,6 +19,7 @@ class ActiveQueueCard extends StatelessWidget {
     final turnKind = QueueTurnDisplay.resolve(
       stats: queue.queueStats,
       patientQueueNumber: queue.booking.queueNumber,
+      bookingStatus: queue.booking.bookingStatus,
     );
     final isHighlight = QueueTurnDisplay.isHighlightTurn(turnKind);
 

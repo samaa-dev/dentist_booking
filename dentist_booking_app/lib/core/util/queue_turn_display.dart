@@ -15,7 +15,14 @@ abstract final class QueueTurnDisplay {
   static QueueTurnKind resolve({
     required QueueStatsModel stats,
     required String? patientQueueNumber,
+    BookingStatus? bookingStatus,
   }) {
+    // After staff completes / marks no-show, always treat as called.
+    if (bookingStatus == BookingStatus.completed ||
+        bookingStatus == BookingStatus.noShow) {
+      return QueueTurnKind.passed;
+    }
+
     final patient = int.tryParse(patientQueueNumber ?? '');
     final current = stats.currentQueueNumber;
     final before = stats.patientsBeforeYou;

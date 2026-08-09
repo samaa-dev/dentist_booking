@@ -18,6 +18,7 @@ class QueueDetails extends StatelessWidget {
     final turnKind = QueueTurnDisplay.resolve(
       stats: queue.queueStats,
       patientQueueNumber: queue.booking.queueNumber,
+      bookingStatus: queue.booking.bookingStatus,
     );
 
     return Dialog(

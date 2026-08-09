@@ -1,10 +1,27 @@
--- Auto-confirm in create_booking
+-- Auto-confirm in create_booking (+ monotonic queue numbers)
 -- Run in Supabase SQL Editor (Dashboard → SQL → New query → Run)
--- Same content as:
--- dentist_booking_admin/supabase/migrations/20260723000001_auto_confirm_in_create_booking.sql
+-- Prefer applying the migration:
+-- dentist_booking_admin/supabase/migrations/20260809000002_monotonic_queue_number_per_shift.sql
 --
 -- When clinic_settings.auto_confirm is true, create_booking forces
 -- booking_status to 'confirmed'. When false, uses p_booking_status.
+-- Queue numbers continue across completed/cancelled/noShow for the same day+shift.
+
+CREATE OR REPLACE FUNCTION public.next_queue_number_for_day_shift(
+  p_day date,
+  p_shift public.booking_shift,
+  p_exclude_id uuid DEFAULT NULL
+) RETURNS integer
+  LANGUAGE sql
+  STABLE
+AS $$
+  SELECT COALESCE(MAX(queue_number), 0) + 1
+  FROM public.bookings
+  WHERE DATE(booking_date) = p_day
+    AND shift = p_shift
+    AND queue_number IS NOT NULL
+    AND (p_exclude_id IS NULL OR id <> p_exclude_id);
+$$;
 
 CREATE OR REPLACE FUNCTION public.create_booking(
   p_booking_date timestamp without time zone,
@@ -70,16 +87,7 @@ BEGIN
     END IF;
   END IF;
 
-  WITH existing_bookings AS (
-    SELECT queue_number
-    FROM bookings
-    WHERE DATE(booking_date) = booking_day
-      AND shift = p_shift
-      AND booking_status IN ('pending','confirmed')
-  )
-  SELECT COALESCE(MAX(queue_number), 0) + 1
-  INTO next_queue
-  FROM existing_bookings;
+  next_queue := public.next_queue_number_for_day_shift(booking_day, p_shift);
 
   formatted_queue_number := LPAD(next_queue::TEXT, 4, '0');
   ticket_code_val := generate_unique_ticket_code();

@@ -3,6 +3,7 @@ import 'package:dentist_booking_admin_app/core/extensions/os_extensions.dart';
 import 'package:dentist_booking_admin_app/core/model/booking_model.dart';
 import 'package:dentist_booking_admin_app/core/widgets/custom_chip.dart';
 import 'package:dentist_booking_admin_app/core/widgets/header_background.dart';
+import 'package:dentist_booking_admin_app/core/widgets/loading_dialog.dart';
 import 'package:dentist_booking_admin_app/generated/locale_keys.g.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +16,8 @@ import '../../../core/app_setup.dart';
 import '../../../core/util/util.dart';
 import '../blocs/booking/booking_cubit.dart';
 import '../widget/booking_filters.dart';
+import '../widget/booking_ticket_sheet.dart';
+import '../widget/create_booking_sheet.dart';
 
 class BookingScreen extends StatelessWidget {
   const BookingScreen({super.key});
@@ -36,38 +39,99 @@ class _BookingView extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return Scaffold(
-      body: Stack(
-        children: [
-          const HeaderBackground(height: 140),
-          SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                  child: Row(
-                    children: [
-                      Icon(
-                        HugeIcons.strokeRoundedAddToList,
-                        color: colorScheme.onPrimary,
+    return BlocConsumer<BookingCubit, BookingState>(
+      listenWhen: (previous, current) => current.maybeWhen(
+        orElse: () => false,
+        loadingbooking: () => true,
+        successAddBooking: (_) => true,
+        successUpdateBooking: (_) => true,
+        errorAddBooking: (_) => true,
+        errorUpdateBooking: (_) => true,
+      ),
+      listener: (context, state) {
+        state.maybeWhen(
+          orElse: () {},
+          loadingbooking: () {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (_) => const LoadingDialog(),
+            );
+          },
+          successAddBooking: (booking) {
+            // Close loading dialog + create sheet (if still open).
+            if (Navigator.canPop(context)) Navigator.pop(context);
+            if (Navigator.canPop(context)) Navigator.pop(context);
+
+            SnackbarMes.showToastMsg(
+              context,
+              message: LocaleKeys.booking_success_create.trnsltd,
+            );
+
+            BookingTicketSheet.show(context, booking: booking);
+          },
+          successUpdateBooking: (_) {
+            if (Navigator.canPop(context)) Navigator.pop(context);
+            if (Navigator.canPop(context)) Navigator.pop(context);
+
+            SnackbarMes.showToastMsg(
+              context,
+              message: LocaleKeys.booking_success_update.trnsltd,
+            );
+          },
+          errorAddBooking: (message) {
+            if (Navigator.canPop(context)) Navigator.pop(context);
+            SnackbarMes.showToastMsg(context, message: message);
+          },
+          errorUpdateBooking: (message) {
+            if (Navigator.canPop(context)) Navigator.pop(context);
+            SnackbarMes.showToastMsg(context, message: message);
+          },
+        );
+      },
+      buildWhen: (previous, current) => current.maybeWhen(
+        orElse: () => false,
+        initial: () => true,
+        loading: () => true,
+        loaded: (_) => true,
+        error: (_) => true,
+      ),
+      builder: (context, state) {
+        return Scaffold(
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () => CreateBookingSheet.show(context),
+            icon: const Icon(HugeIcons.strokeRoundedAdd01),
+            label: Text(LocaleKeys.booking_add.trnsltd),
+          ),
+          body: Stack(
+            children: [
+              const HeaderBackground(height: 140),
+              SafeArea(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                      child: Row(
+                        children: [
+                          Icon(
+                            HugeIcons.strokeRoundedAddToList,
+                            color: colorScheme.onPrimary,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            LocaleKeys.Reservations.trnsltd,
+                            style: textTheme.titleLarge?.copyWith(
+                              color: colorScheme.onPrimary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 10),
-                      Text(
-                        LocaleKeys.Reservations.trnsltd,
-                        style: textTheme.titleLarge?.copyWith(
-                          color: colorScheme.onPrimary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const BookingFilters(),
-                Expanded(
-                  child: BlocBuilder<BookingCubit, BookingState>(
-                    builder: (context, state) {
-                      return state.maybeWhen(
+                    ),
+                    const BookingFilters(),
+                    Expanded(
+                      child: state.maybeWhen(
                         loading: () => _LoadingList(),
                         error: (message) => Center(
                           child: Column(
@@ -76,9 +140,8 @@ class _BookingView extends StatelessWidget {
                               Text(message),
                               const SizedBox(height: 12),
                               FilledButton(
-                                onPressed: () => context
-                                    .read<BookingCubit>()
-                                    .reload(),
+                                onPressed: () =>
+                                    context.read<BookingCubit>().reload(),
                                 child: Text(LocaleKeys.retry.trnsltd),
                               ),
                             ],
@@ -90,7 +153,8 @@ class _BookingView extends StatelessWidget {
                               child: Text(
                                 LocaleKeys.no_bookings.trnsltd,
                                 style: textTheme.bodyLarge?.copyWith(
-                                  color: colorScheme.onSurface.withOpacity(0.6),
+                                  color:
+                                      colorScheme.onSurface.withOpacity(0.6),
                                 ),
                               ),
                             );
@@ -100,7 +164,12 @@ class _BookingView extends StatelessWidget {
                             onRefresh: () =>
                                 context.read<BookingCubit>().reload(),
                             child: ListView.separated(
-                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                              padding: const EdgeInsets.fromLTRB(
+                                16,
+                                8,
+                                16,
+                                88,
+                              ),
                               itemCount: bookings.length,
                               separatorBuilder: (_, __) =>
                                   const SizedBox(height: 12),
@@ -108,22 +177,23 @@ class _BookingView extends StatelessWidget {
                                 final booking = bookings[index];
                                 return BookingCard(
                                   booking: booking,
-                                  onTap: () => _showDetails(context, booking),
+                                  onTap: () =>
+                                      _showDetails(context, booking),
                                 );
                               },
                             ),
                           );
                         },
                         orElse: () => const SizedBox.shrink(),
-                      );
-                    },
-                  ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

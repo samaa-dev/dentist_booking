@@ -12,6 +12,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/enum/enum.dart';
 import '../../../core/model/booking_status_model.dart';
+import '../../../core/model/tracking_model.dart';
 import '../../../core/util/queue_turn_display.dart';
 import '../blocs/booking_status/booking_status_cubit.dart';
 import 'active_bookings_list.dart';
@@ -350,6 +351,15 @@ class _ActiveBookingPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final typedQueues = queues.cast<TrackingModel>();
+    final hasActive = typedQueues.any(
+      (q) =>
+          q.booking.bookingStatus == BookingStatus.pending ||
+          q.booking.bookingStatus == BookingStatus.confirmed,
+    );
+    final panelTitle = hasActive
+        ? LocaleKeys.you_have_active_booking.trnsltd
+        : LocaleKeys.you_already_called.trnsltd;
 
     return TweenAnimationBuilder<double>(
       duration: const Duration(milliseconds: 600),
@@ -389,17 +399,21 @@ class _ActiveBookingPanel extends StatelessWidget {
                         width: 10,
                         height: 10,
                         decoration: BoxDecoration(
-                          color: colorScheme.primary,
+                          color: hasActive
+                              ? colorScheme.primary
+                              : colorScheme.secondary,
                           shape: BoxShape.circle,
                         ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          LocaleKeys.you_have_active_booking.trnsltd,
+                          panelTitle,
                           style: textTheme.titleMedium!.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: colorScheme.primary,
+                            color: hasActive
+                                ? colorScheme.primary
+                                : colorScheme.secondary,
                           ),
                         ),
                       ),
@@ -412,13 +426,13 @@ class _ActiveBookingPanel extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  if (queues.length == 1)
+                  if (typedQueues.length == 1)
                     // إذا كان حجز واحد فقط، عرضه مباشرة
-                    _buildSingleBooking(context, queues[0])
+                    _buildSingleBooking(context, typedQueues[0])
                   else
                     // إذا كان أكثر من حجز، عرض القائمة القابلة للتوسع
                     ActiveBookingsList(
-                      queues: queues.cast(),
+                      queues: typedQueues,
                     ),
                   const SizedBox(height: 20),
                   SizedBox(
@@ -451,14 +465,18 @@ class _ActiveBookingPanel extends StatelessWidget {
     );
   }
 
-  Widget _buildSingleBooking(BuildContext context, dynamic queue) {
+  Widget _buildSingleBooking(BuildContext context, TrackingModel queue) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final turnKind = QueueTurnDisplay.resolve(
       stats: queue.queueStats,
       patientQueueNumber: queue.booking.queueNumber,
+      bookingStatus: queue.booking.bookingStatus,
     );
     final isHighlight = QueueTurnDisplay.isHighlightTurn(turnKind);
+    final isCalled = turnKind == QueueTurnKind.passed;
+    final canCancel = queue.booking.bookingStatus == BookingStatus.pending ||
+        queue.booking.bookingStatus == BookingStatus.confirmed;
 
     return Column(
       children: [
@@ -484,23 +502,28 @@ class _ActiveBookingPanel extends StatelessWidget {
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: colorScheme.primary.withOpacity(.1),
+                color: (isCalled ? colorScheme.secondary : colorScheme.primary)
+                    .withOpacity(.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    Icons.person_rounded,
+                    isCalled ? Icons.check_circle_rounded : Icons.person_rounded,
                     size: 16,
-                    color: colorScheme.primary,
+                    color: isCalled
+                        ? colorScheme.secondary
+                        : colorScheme.primary,
                   ),
                   const SizedBox(width: 6),
                   Text(
                     displayName,
                     style: textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: colorScheme.primary,
+                      color: isCalled
+                          ? colorScheme.secondary
+                          : colorScheme.primary,
                     ),
                   ),
                 ],
@@ -524,7 +547,9 @@ class _ActiveBookingPanel extends StatelessWidget {
             );
             final beforeBlock = _statBlock(
               context,
-              icon: Icons.people_rounded,
+              icon: isCalled
+                  ? Icons.check_circle_rounded
+                  : Icons.people_rounded,
               value: QueueTurnDisplay.beforeYouValue(
                 kind: turnKind,
                 stats: queue.queueStats,
@@ -554,7 +579,7 @@ class _ActiveBookingPanel extends StatelessWidget {
             );
           },
         ),
-        if (queue.booking.id != null) ...[
+        if (canCancel && queue.booking.id != null) ...[
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,

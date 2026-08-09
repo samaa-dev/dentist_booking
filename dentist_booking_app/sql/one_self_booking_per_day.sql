@@ -1,5 +1,26 @@
 -- One self-booking per day: update can_book, create_booking, create_booking_app
 -- Run in Supabase SQL Editor or your PostgreSQL client
+-- Queue numbers: prefer migration
+-- dentist_booking_admin/supabase/migrations/20260809000002_monotonic_queue_number_per_shift.sql
+
+-- =============================================================================
+-- 0) Monotonic next queue number (all statuses for day+shift)
+-- =============================================================================
+CREATE OR REPLACE FUNCTION public.next_queue_number_for_day_shift(
+  p_day date,
+  p_shift public.booking_shift,
+  p_exclude_id uuid DEFAULT NULL
+) RETURNS integer
+  LANGUAGE sql
+  STABLE
+AS $$
+  SELECT COALESCE(MAX(queue_number), 0) + 1
+  FROM public.bookings
+  WHERE DATE(booking_date) = p_day
+    AND shift = p_shift
+    AND queue_number IS NOT NULL
+    AND (p_exclude_id IS NULL OR id <> p_exclude_id);
+$$;
 
 -- =============================================================================
 -- 1) can_book: Remove section 9 (registered patient cannot book twice per day)
@@ -272,16 +293,7 @@ BEGIN
     END IF;
   END IF;
 
-  WITH existing_bookings AS (
-    SELECT queue_number
-    FROM bookings
-    WHERE DATE(booking_date) = booking_day
-      AND shift = p_shift
-      AND booking_status IN ('pending','confirmed')
-  )
-  SELECT COALESCE(MAX(queue_number), 0) + 1
-  INTO next_queue
-  FROM existing_bookings;
+  next_queue := public.next_queue_number_for_day_shift(booking_day, p_shift);
 
   formatted_queue_number := LPAD(next_queue::TEXT, 4, '0');
   ticket_code_val := generate_unique_ticket_code();
@@ -382,11 +394,7 @@ BEGIN
     );
   END IF;
 
-  SELECT COALESCE(MAX(queue_number), 0) + 1 INTO next_queue
-  FROM bookings
-  WHERE DATE(booking_date) = booking_day
-    AND shift = p_shift
-    AND booking_status IN ('pending','confirmed');
+  next_queue := public.next_queue_number_for_day_shift(booking_day, p_shift);
 
   formatted_queue_number := LPAD(next_queue::TEXT, 4, '0');
   ticket_code_val := generate_unique_ticket_code();

@@ -45,10 +45,22 @@ class QueueRepo {
     }
   }
 
+  /// Bookings shown on today's home panel: active + already called.
+  bool _isTodayHomeVisibleBooking(BookingModel booking) {
+    final status = booking.bookingStatus;
+    final isVisibleStatus = status == BookingStatus.pending ||
+        status == BookingStatus.confirmed ||
+        status == BookingStatus.completed ||
+        status == BookingStatus.noShow;
+    final hasTicket =
+        booking.ticketCode != null && booking.ticketCode!.isNotEmpty;
+    return isVisibleStatus && hasTicket;
+  }
+
   Future<TrackingModel?> getActiveBookingQueue() async {
     try {
       final today = DateTime.now();
-      
+
       // جلب حجوزات المستخدم لليوم الحالي
       final bookings = await _bookingRepo.getBookings(
         startDate: DateTime(today.year, today.month, today.day),
@@ -56,25 +68,14 @@ class QueueRepo {
         searchQuery: null,
       );
 
-      // البحث عن حجز فعال (pending أو confirmed)
+      // نشط أو تم استدعاؤه اليوم (completed / noShow)
       BookingModel? activeBooking;
       try {
-        activeBooking = bookings.firstWhere(
-          (booking) =>
-              booking.bookingStatus == BookingStatus.pending ||
-              booking.bookingStatus == BookingStatus.confirmed,
-        );
+        activeBooking = bookings.firstWhere(_isTodayHomeVisibleBooking);
       } catch (e) {
-        // لا يوجد حجز فعال
         return null;
       }
 
-      // إذا لم يكن هناك ticketCode، إرجاع null
-      if (activeBooking.ticketCode == null || activeBooking.ticketCode!.isEmpty) {
-        return null;
-      }
-
-      // جلب معلومات الطابور باستخدام ticketCode
       return await getBookingQueue(ticketCode: activeBooking.ticketCode!);
     } catch (e) {
       debugPrint("Failed to fetch active booking queue: $e");
@@ -85,7 +86,7 @@ class QueueRepo {
   Future<List<TrackingModel>> getAllActiveBookingQueues() async {
     try {
       final today = DateTime.now();
-      
+
       // جلب حجوزات المستخدم لليوم الحالي
       final bookings = await _bookingRepo.getBookings(
         startDate: DateTime(today.year, today.month, today.day),
@@ -93,22 +94,15 @@ class QueueRepo {
         searchQuery: null,
       );
 
-      // فلترة الحجوزات الفعالة (pending أو confirmed)
-      final activeBookings = bookings.where(
-        (booking) =>
-            (booking.bookingStatus == BookingStatus.pending ||
-                booking.bookingStatus == BookingStatus.confirmed) &&
-            booking.ticketCode != null &&
-            booking.ticketCode!.isNotEmpty,
-      ).toList();
+      final visibleBookings =
+          bookings.where(_isTodayHomeVisibleBooking).toList();
 
-      if (activeBookings.isEmpty) {
+      if (visibleBookings.isEmpty) {
         return [];
       }
 
-      // جلب معلومات الطابور لكل حجز فعال
       final List<TrackingModel> queues = [];
-      for (final booking in activeBookings) {
+      for (final booking in visibleBookings) {
         try {
           final queue = await getBookingQueue(ticketCode: booking.ticketCode!);
           if (queue != null) {
@@ -116,7 +110,6 @@ class QueueRepo {
           }
         } catch (e) {
           debugPrint("Failed to fetch queue for ticket ${booking.ticketCode}: $e");
-          // نستمر في الحلقة حتى لو فشل حجز واحد
         }
       }
 

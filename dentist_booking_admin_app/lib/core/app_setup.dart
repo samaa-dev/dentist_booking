@@ -43,6 +43,7 @@ Future<void> setUp() async {
   getIt.registerFactory(
     () => BookingCubit(
       bookingRepo: bookingRepo,
+      client: client,
     ),
   );
 
