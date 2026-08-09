@@ -66,72 +66,88 @@ class _QueueChangeStatusSheetState extends State<QueueChangeStatusSheet> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    final bottomSafe = MediaQuery.viewPaddingOf(context).bottom;
+    final maxHeight = MediaQuery.sizeOf(context).height * 0.85;
+    final bottomPad = 16 + bottomInset + (bottomSafe > 12 ? bottomSafe : 12);
 
-    return Padding(
-      padding: EdgeInsets.fromLTRB(16, 0, 16, 16 + bottomInset),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          DialogTitleHeader(
-            title: LocaleKeys.change_status_patient_form_title.trnsltd,
-            subtitle: LocaleKeys.change_status_patient_form_subtitle.tr(
-              namedArgs: {
-                'name': widget.booking.patientName ?? '-',
-              },
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: maxHeight),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(16, 0, 16, bottomPad),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DialogTitleHeader(
+              title: LocaleKeys.change_status_patient_form_title.trnsltd,
+              subtitle: LocaleKeys.change_status_patient_form_subtitle.tr(
+                namedArgs: {
+                  'name': widget.booking.patientName ?? '-',
+                },
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: BookingStatus.values.map((status) {
-              return _StatusChip(
-                status: status,
-                selected: _status == status,
-                onTap: () => _onStatusChanged(status),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 12),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 250),
-            child: isCancelled
-                ? Container(
-                    key: const ValueKey('cancel_reason'),
-                    height: 80,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 5,
-                      vertical: 6,
+            const SizedBox(height: 16),
+            Flexible(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: BookingStatus.values.map((status) {
+                        return _StatusChip(
+                          status: status,
+                          selected: _status == status,
+                          onTap: () => _onStatusChanged(status),
+                        );
+                      }).toList(),
                     ),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface.withOpacity(0.5),
-                      border: Border.all(
-                        color: colorScheme.onSurface.withOpacity(0.3),
-                        width: 0.5,
-                      ),
-                      borderRadius: BorderRadius.circular(22),
+                    const SizedBox(height: 12),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 250),
+                      child: isCancelled
+                          ? Container(
+                              key: const ValueKey('cancel_reason'),
+                              height: 80,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: colorScheme.surface.withOpacity(0.5),
+                                border: Border.all(
+                                  color: colorScheme.onSurface.withOpacity(0.3),
+                                  width: 0.5,
+                                ),
+                                borderRadius: BorderRadius.circular(22),
+                              ),
+                              child: CustomTextFormField(
+                                controller: cancelReasonCtrl,
+                                maxLines: 2,
+                                hintText: LocaleKeys.booking_cancel_reason.trnsltd,
+                                prefixIcon: const Icon(
+                                  HugeIcons.strokeRoundedMessageCancel02,
+                                ),
+                                keyboardType: TextInputType.text,
+                              ),
+                            )
+                          : const SizedBox.shrink(key: ValueKey('no_reason')),
                     ),
-                    child: CustomTextFormField(
-                      controller: cancelReasonCtrl,
-                      maxLines: 2,
-                      hintText: LocaleKeys.booking_cancel_reason.trnsltd,
-                      prefixIcon: const Icon(
-                        HugeIcons.strokeRoundedMessageCancel02,
-                      ),
-                      keyboardType: TextInputType.text,
-                    ),
-                  )
-                : const SizedBox.shrink(key: ValueKey('no_reason')),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: _onConfirm,
-              child: Text(LocaleKeys.save_button.trnsltd),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: _onConfirm,
+                child: Text(LocaleKeys.save_button.trnsltd),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

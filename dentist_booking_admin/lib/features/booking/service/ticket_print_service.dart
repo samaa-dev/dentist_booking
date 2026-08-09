@@ -67,6 +67,10 @@ class TicketPrintService {
         printerName,
         path,
         docName: name,
+        scaling: pffi.PdfPrintScaling.actualSize,
+        options: const [
+          pffi.AlignmentOption(pffi.PdfPrintAlignment.top),
+        ],
       );
       if (!ok) throw Exception('printPdf returned false');
       debugPrint('[TicketPrintService] printed to $printerName');

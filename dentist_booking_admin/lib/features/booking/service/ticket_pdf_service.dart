@@ -7,11 +7,11 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 /// Builds a one-page PDF ticket sized for 80mm thermal printers.
-/// Uses 72mm printable width (actual print area on 80mm roll) and a tall
-/// page height so the thermal cutter trims after the last line of content.
+/// Uses 72mm printable width (actual print area on 80mm roll) and a compact
+/// page height so drivers that fit/center the page do not leave a large top gap.
 class TicketPdfService {
   static const double _ticketWidthMm = 72;
-  static const double _ticketHeightMm = 200;
+  static const double _ticketHeightMm = 140;
 
   static const String _fontRegularAsset = 'assets/fonts/Amiri-Regular.ttf';
   static const String _fontBoldAsset = 'assets/fonts/Amiri-Bold.ttf';
@@ -97,10 +97,12 @@ class TicketPdfService {
           final bold26 = base.copyWith(fontSize: 26, fontWeight: pw.FontWeight.bold);
           final normal9 = base.copyWith(fontSize: 9);
 
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.center,
-            mainAxisSize: pw.MainAxisSize.min,
-            children: [
+          return pw.Align(
+            alignment: pw.Alignment.topCenter,
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.center,
+              mainAxisSize: pw.MainAxisSize.min,
+              children: [
               // ── Header ──
               pw.Text('عيادة الوفاء', textDirection: pw.TextDirection.rtl, style: bold14),
               pw.SizedBox(height: 1),
@@ -165,7 +167,8 @@ class TicketPdfService {
                   style: normal10,
                 ),
               ],
-            ],
+              ],
+            ),
           );
         },
       ),

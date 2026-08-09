@@ -37,13 +37,16 @@ abstract class SnackbarMes {
         ),
       ),
       builder: (BuildContext context) {
+        final bottomSafe = MediaQuery.viewPaddingOf(context).bottom;
         return Padding(
           padding: EdgeInsets.zero,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               child,
-              isExpanded ? const SizedBox.shrink() : const SizedBox(height: 50),
+              SizedBox(
+                height: isExpanded ? bottomSafe : 50 + bottomSafe,
+              ),
             ],
           ),
         );

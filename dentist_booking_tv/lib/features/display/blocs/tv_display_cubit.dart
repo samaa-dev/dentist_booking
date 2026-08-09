@@ -33,6 +33,10 @@ class TvDisplayCubit extends Cubit<TvDisplayState> {
   /// Last known current_queue_number from a previous successful load (used to detect "new number called").
   int? _lastCurrentQueueNumber;
 
+  /// Prevent overlapping queue_status RPCs from wiping an in-flight call overlay.
+  bool _refreshInFlight = false;
+  bool _refreshQueued = false;
+
   static const Duration _refreshDebounce = Duration(milliseconds: 400);
 
   /// Slow poll when anon RLS blocks bookings realtime (waiting list / confirmed bookings).
@@ -140,13 +144,28 @@ class TvDisplayCubit extends Cubit<TvDisplayState> {
       await _loadInitial();
       return;
     }
+
+    if (_refreshInFlight) {
+      _refreshQueued = true;
+      return;
+    }
+
+    _refreshInFlight = true;
     try {
-      final queueStatus = await _queueRepo.statusQueue();
-      final current = state;
-      final ads = current is TvDisplayLoaded ? current.ads : <AdsModel>[];
-      _emitLoaded(queueStatus: queueStatus, ads: ads);
-    } catch (e) {
-      debugPrint('TV queue refresh error: $e');
+      do {
+        _refreshQueued = false;
+        try {
+          final queueStatus = await _queueRepo.statusQueue();
+          if (isClosed) return;
+          final current = state;
+          final ads = current is TvDisplayLoaded ? current.ads : <AdsModel>[];
+          _emitLoaded(queueStatus: queueStatus, ads: ads);
+        } catch (e) {
+          debugPrint('TV queue refresh error: $e');
+        }
+      } while (_refreshQueued && !isClosed);
+    } finally {
+      _refreshInFlight = false;
     }
   }
 
@@ -165,7 +184,13 @@ class TvDisplayCubit extends Cubit<TvDisplayState> {
     required QueueStatusModel queueStatus,
     required List<AdsModel> ads,
   }) {
-    int? justCalledNumber;
+    final current = state;
+    final previousJustCalled =
+        current is TvDisplayLoaded ? current.justCalledNumber : null;
+
+    // Keep an in-progress call sticky until clearJustCalled() — unless inactive.
+    int? justCalledNumber = previousJustCalled;
+
     if (queueStatus.hasActiveCurrentTurn) {
       final newCurrent = queueStatus.currentQueueNumber ?? 0;
       final prev = _lastCurrentQueueNumber;
@@ -177,9 +202,9 @@ class TvDisplayCubit extends Cubit<TvDisplayState> {
       _lastCurrentQueueNumber = newCurrent;
     } else {
       _lastCurrentQueueNumber = null;
+      justCalledNumber = null;
     }
 
-    final current = state;
     final doctorDisplayName =
         current is TvDisplayLoaded ? current.doctorDisplayName : null;
 

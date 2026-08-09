@@ -131,7 +131,7 @@ class _CurrentCard extends StatelessWidget {
 
     return Container(
       padding: EdgeInsets.symmetric(
-        vertical: context.s(24),
+        vertical: context.s(20),
         horizontal: context.s(24),
       ),
       decoration: BoxDecoration(
@@ -162,56 +162,96 @@ class _CurrentCard extends StatelessWidget {
               ),
             ),
           ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.campaign,
-                    color: Colors.white.withOpacity(0.9),
-                    size: context.s(28),
-                  ),
-                  SizedBox(width: context.s(8)),
-                  Text(
-                    'الرقم الحالي',
-                    style: textTheme.titleLarge?.copyWith(
-                      color: Colors.white.withOpacity(0.9),
-                      fontWeight: FontWeight.bold,
-                      fontSize: context.s(24),
+              Flexible(
+                flex: 2,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.campaign,
+                          color: Colors.white.withOpacity(0.9),
+                          size: context.s(26),
+                        ),
+                        SizedBox(width: context.s(8)),
+                        Flexible(
+                          child: Text(
+                            'الرقم الحالي',
+                            style: textTheme.titleLarge?.copyWith(
+                              color: Colors.white.withOpacity(0.9),
+                              fontWeight: FontWeight.bold,
+                              fontSize: context.s(22),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-              SizedBox(height: context.s(12)),
-              if (isNotStarted)
-                Flexible(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      _notStartedMessage,
-                      textAlign: TextAlign.center,
-                      style: textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        fontSize: context.s(40),
-                        color: Colors.white,
-                        height: 1.2,
+                    if (!isNotStarted) ...[
+                      SizedBox(height: context.s(12)),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: context.s(16),
+                          vertical: context.s(6),
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          TvDisplayStrings.directionToDoctor,
+                          style: textTheme.titleMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                            fontSize: context.s(18),
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                  ),
-                )
-              else
-                Flexible(
+                      if (doctorName.isNotEmpty) ...[
+                        SizedBox(height: context.s(8)),
+                        Text(
+                          doctorName,
+                          style: textTheme.titleMedium?.copyWith(
+                            color: Colors.white.withOpacity(0.95),
+                            fontWeight: FontWeight.bold,
+                            fontSize: context.s(18),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ],
+                ),
+              ),
+              SizedBox(width: context.s(16)),
+              Expanded(
+                flex: 3,
+                child: Center(
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
+                    alignment: Alignment.center,
                     child: Text(
-                      currentNumber.toString().padLeft(4, '0'),
+                      isNotStarted
+                          ? _notStartedMessage
+                          : currentNumber.toString().padLeft(4, '0'),
+                      textAlign: TextAlign.center,
                       style: textTheme.headlineLarge?.copyWith(
                         fontWeight: FontWeight.w900,
-                        fontSize: context.s(96),
+                        fontSize: isNotStarted
+                            ? context.s(44)
+                            : context.s(104),
                         color: Colors.white,
-                        letterSpacing: -2,
+                        letterSpacing: isNotStarted ? 0 : -2,
+                        height: 1,
                         shadows: [
                           Shadow(
                             color: Colors.black.withOpacity(0.2),
@@ -223,40 +263,7 @@ class _CurrentCard extends StatelessWidget {
                     ),
                   ),
                 ),
-              if (!isNotStarted) ...[
-                SizedBox(height: context.s(12)),
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: context.s(24),
-                    vertical: context.s(8),
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    TvDisplayStrings.directionToDoctor,
-                    style: textTheme.titleMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                      fontSize: context.s(22),
-                    ),
-                  ),
-                ),
-                if (doctorName.isNotEmpty) ...[
-                  SizedBox(height: context.s(8)),
-                  Text(
-                    doctorName,
-                    style: textTheme.titleMedium?.copyWith(
-                      color: Colors.white.withOpacity(0.95),
-                      fontWeight: FontWeight.bold,
-                      fontSize: context.s(20),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ],
+              ),
             ],
           ),
         ],
@@ -284,7 +291,7 @@ class _NextCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(
-        vertical: context.s(20),
+        vertical: context.s(16),
         horizontal: context.s(16),
       ),
       decoration: BoxDecoration(
@@ -292,50 +299,65 @@ class _NextCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(context.s(12)),
         border: Border.all(color: greyBorderColor),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(
-            'التالي',
-            style: textTheme.titleMedium?.copyWith(
-              color: greyLabelColor,
-              fontWeight: FontWeight.bold,
-              fontSize: context.s(20),
-            ),
-          ),
-          SizedBox(height: context.s(8)),
           Flexible(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                nextNumber,
-                style: textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w900,
-                  fontSize: context.s(48),
-                  color: const Color(0xFF1E293B),
+            flex: 2,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'التالي',
+                  style: textTheme.titleMedium?.copyWith(
+                    color: greyLabelColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: context.s(20),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: context.s(8)),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.trending_up,
+                      size: context.s(18),
+                      color: QueueDisplayTv._greenAccent,
+                    ),
+                    SizedBox(width: context.s(4)),
+                    Text(
+                      '+1',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: QueueDisplayTv._greenAccent,
+                        fontWeight: FontWeight.bold,
+                        fontSize: context.s(14),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: context.s(8)),
+          Expanded(
+            flex: 3,
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.center,
+                child: Text(
+                  nextNumber,
+                  style: textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    fontSize: context.s(72),
+                    color: const Color(0xFF1E293B),
+                    height: 1,
+                  ),
                 ),
               ),
             ),
-          ),
-          SizedBox(height: context.s(8)),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.trending_up,
-                size: context.s(18),
-                color: QueueDisplayTv._greenAccent,
-              ),
-              SizedBox(width: context.s(4)),
-              Text(
-                '+1',
-                style: textTheme.bodyMedium?.copyWith(
-                  color: QueueDisplayTv._greenAccent,
-                  fontWeight: FontWeight.bold,
-                  fontSize: context.s(14),
-                ),
-              ),
-            ],
           ),
         ],
       ),
