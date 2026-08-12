@@ -18,6 +18,14 @@ class _SignInFormState extends State<SignInForm> {
   bool _isPasswordVisible = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -61,6 +69,49 @@ class _SignInFormState extends State<SignInForm> {
                 ),
               ),
             ),
+          ),
+          const SizedBox(height: 12),
+          Builder(
+            builder: (context) {
+              final cubit = context.read<AuthCubit>();
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: cubit.rememberMe,
+                        onChanged: (_) {
+                          cubit.toggleRememberMe();
+                          setState(() {});
+                        },
+                      ),
+                      Text(
+                        'remember_me'.trnsltd,
+                        style: TextStyle(
+                          color: colorScheme.onPrimary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (cubit.hasSavedCredentials)
+                    TextButton(
+                      onPressed: () async {
+                        await cubit.clearSavedCredentials();
+                        if (mounted) setState(() {});
+                      },
+                      child: Text(
+                        'clear_saved_credentials'.trnsltd,
+                        style: TextStyle(
+                          color: colorScheme.onPrimary.withOpacity(0.75),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 28),
         ],

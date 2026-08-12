@@ -15,6 +15,7 @@ _$$BookingStatusModelImplImpl _$$$BookingStatusModelImplImplFromJson(
   isBookingEnabled: json['is_booking_enabled'] as bool?,
   stopReason: json['stop_reason'] as String?,
   shiftClosed: $enumDecodeNullable(_$BookingShiftEnumMap, json['shift_closed']),
+  shiftFull: $enumDecodeNullable(_$BookingShiftEnumMap, json['shift_full']),
 );
 
 Map<String, dynamic> _$$$BookingStatusModelImplImplToJson(
@@ -26,6 +27,7 @@ Map<String, dynamic> _$$$BookingStatusModelImplImplToJson(
   'is_booking_enabled': instance.isBookingEnabled,
   'stop_reason': instance.stopReason,
   'shift_closed': _$BookingShiftEnumMap[instance.shiftClosed],
+  'shift_full': _$BookingShiftEnumMap[instance.shiftFull],
 };
 
 const _$BookingShiftEnumMap = {

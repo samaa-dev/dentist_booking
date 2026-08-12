@@ -13,12 +13,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/enum/enum.dart';
 import '../../repo/sign_in_repo.dart';
+import '../../repo/credentials_store.dart';
 
 part 'auth_cubit.freezed.dart';
 part 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   final SignInRepo _signInRepo;
+  final CredentialsStore _credentialsStore;
 
   late final StreamSubscription<gotrue.AuthState> _authSubscription;
   StreamSubscription<Map<String, dynamic>>? _profileSubscription;
@@ -28,15 +30,22 @@ class AuthCubit extends Cubit<AuthState> {
 
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
+  bool rememberMe = false;
+  bool hasSavedCredentials = false;
+
   AuthCubit({
     required SignInRepo signInRepo,
     required SupabaseClient client,
+    required CredentialsStore credentialsStore,
   }) : _signInRepo = signInRepo,
+       _credentialsStore = credentialsStore,
        super(const AuthState.initial()) {
     _listenToAuthChanges();
+    // Load saved email/password for "Remember me"
+    // ignore: unawaited_futures
+    _loadSavedCredentials();
   }
 
-  //Listeners Changes in AuthState
   Future<void> _listenToAuthChanges() async {
     _authSubscription = _signInRepo.authStateChanges.listen(
       (auth) async {
@@ -45,16 +54,26 @@ class AuthCubit extends Cubit<AuthState> {
           return;
         }
 
-        final session = auth.session;
-        if (session == null) {
-          _handleNoSession();
-          return;
+        switch (auth.event) {
+          case AuthChangeEvent.signedIn:
+          case AuthChangeEvent.userUpdated:
+            if (auth.session == null) {
+              _handleNoSession();
+              return;
+            }
+            emit(const AuthState.status(status: AuthStatus.authenticated));
+            await _updateUserStatus(auth.session!.user.id);
+
+          case AuthChangeEvent.tokenRefreshed:
+            break;
+
+          case AuthChangeEvent.signedOut:
+          case AuthChangeEvent.userDeleted:
+            _handleNoSession();
+
+          default:
+            break;
         }
-
-        final userId = session.user.id;
-        emit(const AuthState.status(status: AuthStatus.authenticated));
-
-        await _updateUserStatus(userId);
       },
       onError: (e) => _handleStreamError(e),
     );
@@ -103,6 +122,30 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  Future<void> _loadSavedCredentials() async {
+    final hasSaved = await _credentialsStore.hasSaved();
+    if (!hasSaved) return;
+
+    final loaded = await _credentialsStore.load();
+    emailController.text = loaded.email ?? '';
+    passwordController.text = loaded.password ?? '';
+
+    rememberMe = true;
+    hasSavedCredentials = true;
+  }
+
+  void toggleRememberMe() {
+    rememberMe = !rememberMe;
+  }
+
+  Future<void> clearSavedCredentials() async {
+    await _credentialsStore.clear();
+    emailController.clear();
+    passwordController.clear();
+    rememberMe = false;
+    hasSavedCredentials = false;
+  }
+
   //Sign In With Email And Password
   Future<void> signInWithEmailAndPassword() async {
     emit(const AuthState.loading());
@@ -136,6 +179,17 @@ class AuthCubit extends Cubit<AuthState> {
 
       final userId = _signInRepo.currentSession!.user.id;
       await _updateUserStatus(userId);
+
+      final email = emailController.text.trim();
+      final password = passwordController.text.trim();
+
+      if (rememberMe) {
+        await _credentialsStore.save(email, password);
+        hasSavedCredentials = true;
+      } else {
+        await _credentialsStore.clear();
+        hasSavedCredentials = false;
+      }
     } catch (e, stack) {
       debugPrint('📜 Stack trace: $stack');
 
@@ -173,23 +227,16 @@ class AuthCubit extends Cubit<AuthState> {
     emit(const AuthState.status(status: AuthStatus.unauthenticated));
   }
 
-  //Handle Errors
   void _handleStreamError(dynamic e) {
-    // // final msg = SupabaseErrorHandler.getFriendlyMessage(e);
-    // if (msg.toLowerCase().contains("timeout") ||
-    //     msg.toLowerCase().contains("connection")) {
-    //   _emitNoInternet();
-    // } else {
-    //   _emitError(msg);
-    // }
+    if (e is AuthException) {
+      _handleNoSession();
+    }
   }
 
-  //Handle Profile Errors
   void _handleProfileError(dynamic e) {
-    // final msg = SupabaseErrorHandler.getFriendlyMessage(e);
-    // if (!msg.toLowerCase().contains("connection")) {
-    //   _emitError(msg);
-    // }
+    if (e is AuthException) {
+      _handleNoSession();
+    }
   }
 
   @override

@@ -15,6 +15,8 @@ class BookingStatusModel with _$BookingStatusModel {
     @JsonKey(name: 'stop_reason') String? stopReason,
     /// When set, the current clock window's shift is closed for booking.
     @JsonKey(name: 'shift_closed') BookingShift? shiftClosed,
+    /// When set, the current shift has reached its booking capacity.
+    @JsonKey(name: 'shift_full') BookingShift? shiftFull,
   }) = _$BookingStatusModelImpl;
 
   factory BookingStatusModel.fromJson(Map<String, dynamic> json) =>

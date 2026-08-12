@@ -36,6 +36,10 @@ mixin _$BookingStatusModel {
   @JsonKey(name: 'shift_closed')
   BookingShift? get shiftClosed => throw _privateConstructorUsedError;
 
+  /// When set, the current shift has reached its booking capacity.
+  @JsonKey(name: 'shift_full')
+  BookingShift? get shiftFull => throw _privateConstructorUsedError;
+
   /// Serializes this BookingStatusModel to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
@@ -60,6 +64,7 @@ abstract class $BookingStatusModelCopyWith<$Res> {
     @JsonKey(name: 'is_booking_enabled') bool? isBookingEnabled,
     @JsonKey(name: 'stop_reason') String? stopReason,
     @JsonKey(name: 'shift_closed') BookingShift? shiftClosed,
+    @JsonKey(name: 'shift_full') BookingShift? shiftFull,
   });
 }
 
@@ -84,6 +89,7 @@ class _$BookingStatusModelCopyWithImpl<$Res, $Val extends BookingStatusModel>
     Object? isBookingEnabled = freezed,
     Object? stopReason = freezed,
     Object? shiftClosed = freezed,
+    Object? shiftFull = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -111,6 +117,10 @@ class _$BookingStatusModelCopyWithImpl<$Res, $Val extends BookingStatusModel>
                 ? _value.shiftClosed
                 : shiftClosed // ignore: cast_nullable_to_non_nullable
                       as BookingShift?,
+            shiftFull: freezed == shiftFull
+                ? _value.shiftFull
+                : shiftFull // ignore: cast_nullable_to_non_nullable
+                      as BookingShift?,
           )
           as $Val,
     );
@@ -133,6 +143,7 @@ abstract class _$$$BookingStatusModelImplImplCopyWith<$Res>
     @JsonKey(name: 'is_booking_enabled') bool? isBookingEnabled,
     @JsonKey(name: 'stop_reason') String? stopReason,
     @JsonKey(name: 'shift_closed') BookingShift? shiftClosed,
+    @JsonKey(name: 'shift_full') BookingShift? shiftFull,
   });
 }
 
@@ -157,6 +168,7 @@ class __$$$BookingStatusModelImplImplCopyWithImpl<$Res>
     Object? isBookingEnabled = freezed,
     Object? stopReason = freezed,
     Object? shiftClosed = freezed,
+    Object? shiftFull = freezed,
   }) {
     return _then(
       _$$BookingStatusModelImplImpl(
@@ -184,6 +196,10 @@ class __$$$BookingStatusModelImplImplCopyWithImpl<$Res>
             ? _value.shiftClosed
             : shiftClosed // ignore: cast_nullable_to_non_nullable
                   as BookingShift?,
+        shiftFull: freezed == shiftFull
+            ? _value.shiftFull
+            : shiftFull // ignore: cast_nullable_to_non_nullable
+                  as BookingShift?,
       ),
     );
   }
@@ -199,6 +215,7 @@ class _$$BookingStatusModelImplImpl implements _$BookingStatusModelImpl {
     @JsonKey(name: 'is_booking_enabled') this.isBookingEnabled,
     @JsonKey(name: 'stop_reason') this.stopReason,
     @JsonKey(name: 'shift_closed') this.shiftClosed,
+    @JsonKey(name: 'shift_full') this.shiftFull,
   });
 
   factory _$$BookingStatusModelImplImpl.fromJson(Map<String, dynamic> json) =>
@@ -225,9 +242,14 @@ class _$$BookingStatusModelImplImpl implements _$BookingStatusModelImpl {
   @JsonKey(name: 'shift_closed')
   final BookingShift? shiftClosed;
 
+  /// When set, the current shift has reached its booking capacity.
+  @override
+  @JsonKey(name: 'shift_full')
+  final BookingShift? shiftFull;
+
   @override
   String toString() {
-    return 'BookingStatusModel(isOpen: $isOpen, shift: $shift, timeLeft: $timeLeft, isBookingEnabled: $isBookingEnabled, stopReason: $stopReason, shiftClosed: $shiftClosed)';
+    return 'BookingStatusModel(isOpen: $isOpen, shift: $shift, timeLeft: $timeLeft, isBookingEnabled: $isBookingEnabled, stopReason: $stopReason, shiftClosed: $shiftClosed, shiftFull: $shiftFull)';
   }
 
   @override
@@ -244,7 +266,9 @@ class _$$BookingStatusModelImplImpl implements _$BookingStatusModelImpl {
             (identical(other.stopReason, stopReason) ||
                 other.stopReason == stopReason) &&
             (identical(other.shiftClosed, shiftClosed) ||
-                other.shiftClosed == shiftClosed));
+                other.shiftClosed == shiftClosed) &&
+            (identical(other.shiftFull, shiftFull) ||
+                other.shiftFull == shiftFull));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -257,6 +281,7 @@ class _$$BookingStatusModelImplImpl implements _$BookingStatusModelImpl {
     isBookingEnabled,
     stopReason,
     shiftClosed,
+    shiftFull,
   );
 
   /// Create a copy of BookingStatusModel
@@ -284,6 +309,7 @@ abstract class _$BookingStatusModelImpl implements BookingStatusModel {
     @JsonKey(name: 'is_booking_enabled') final bool? isBookingEnabled,
     @JsonKey(name: 'stop_reason') final String? stopReason,
     @JsonKey(name: 'shift_closed') final BookingShift? shiftClosed,
+    @JsonKey(name: 'shift_full') final BookingShift? shiftFull,
   }) = _$$BookingStatusModelImplImpl;
 
   factory _$BookingStatusModelImpl.fromJson(Map<String, dynamic> json) =
@@ -309,6 +335,11 @@ abstract class _$BookingStatusModelImpl implements BookingStatusModel {
   @override
   @JsonKey(name: 'shift_closed')
   BookingShift? get shiftClosed;
+
+  /// When set, the current shift has reached its booking capacity.
+  @override
+  @JsonKey(name: 'shift_full')
+  BookingShift? get shiftFull;
 
   /// Create a copy of BookingStatusModel
   /// with the given fields replaced by the non-null parameter values.

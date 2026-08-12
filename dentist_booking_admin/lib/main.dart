@@ -32,6 +32,9 @@ void main() async {
   await Supabase.initialize(
     url: EnvConfig.urlSupabase,
     anonKey: EnvConfig.supabaseKey,
+    authOptions: const FlutterAuthClientOptions(
+      autoRefreshToken: true,
+    ),
   );
 
   await EasyLocalization.ensureInitialized();

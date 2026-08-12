@@ -10,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../features/announcement/blocs/announcement/announcement_cubit.dart';
 import '../features/announcement/repo/announcement_repo.dart';
 import '../features/auth/blocs/auth/auth_cubit.dart';
+import '../features/auth/repo/credentials_store.dart';
 import '../features/auth/repo/sign_in_repo.dart';
 import '../features/booking/blocs/booking_count/booking_count_cubit.dart';
 import '../features/booking/repo/booking_repo.dart';
@@ -29,10 +30,15 @@ Future<void> setUp() async {
 
   final signInRepo = SignInRepo(supabase: client);
   getIt.registerLazySingleton<SignInRepo>(() => signInRepo);
+
+  final credentialsStore = CredentialsStore();
+  getIt.registerLazySingleton<CredentialsStore>(() => credentialsStore);
+
   getIt.registerFactory(
     () => AuthCubit(
       signInRepo: signInRepo,
       client: client,
+      credentialsStore: credentialsStore,
     ),
   );
 

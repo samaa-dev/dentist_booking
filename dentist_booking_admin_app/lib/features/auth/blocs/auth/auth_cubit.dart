@@ -13,12 +13,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/enum/enum.dart';
 import '../../repo/sign_in_repo.dart';
+import '../../repo/credentials_store.dart';
 
 part 'auth_cubit.freezed.dart';
 part 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   final SignInRepo _signInRepo;
+  final CredentialsStore _credentialsStore;
 
   late final StreamSubscription<gotrue.AuthState> _authSubscription;
   StreamSubscription<Map<String, dynamic>>? _profileSubscription;
@@ -28,12 +30,19 @@ class AuthCubit extends Cubit<AuthState> {
 
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
+  bool rememberMe = false;
+  bool hasSavedCredentials = false;
+
   AuthCubit({
     required SignInRepo signInRepo,
     required SupabaseClient client,
+    required CredentialsStore credentialsStore,
   }) : _signInRepo = signInRepo,
+       _credentialsStore = credentialsStore,
        super(const AuthState.initial()) {
     _listenToAuthChanges();
+    // ignore: unawaited_futures
+    _loadSavedCredentials();
   }
 
   //Listeners Changes in AuthState
@@ -103,6 +112,30 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  Future<void> _loadSavedCredentials() async {
+    final hasSaved = await _credentialsStore.hasSaved();
+    if (!hasSaved) return;
+
+    final loaded = await _credentialsStore.load();
+    emailController.text = loaded.email ?? '';
+    passwordController.text = loaded.password ?? '';
+
+    rememberMe = true;
+    hasSavedCredentials = true;
+  }
+
+  void toggleRememberMe() {
+    rememberMe = !rememberMe;
+  }
+
+  Future<void> clearSavedCredentials() async {
+    await _credentialsStore.clear();
+    emailController.clear();
+    passwordController.clear();
+    rememberMe = false;
+    hasSavedCredentials = false;
+  }
+
   //Sign In With Email And Password
   Future<void> signInWithEmailAndPassword() async {
     emit(const AuthState.loading());
@@ -136,6 +169,17 @@ class AuthCubit extends Cubit<AuthState> {
 
       final userId = _signInRepo.currentSession!.user.id;
       await _updateUserStatus(userId);
+
+      final email = emailController.text.trim();
+      final password = passwordController.text.trim();
+
+      if (rememberMe) {
+        await _credentialsStore.save(email, password);
+        hasSavedCredentials = true;
+      } else {
+        await _credentialsStore.clear();
+        hasSavedCredentials = false;
+      }
     } catch (e, stack) {
       debugPrint('📜 Stack trace: $stack');
 

@@ -82,7 +82,8 @@ class _BookingStatusPanelLayout extends StatelessWidget {
 
     final bool isOpen = status.isOpen ?? false;
     final bool isBookingEnabled = status.isBookingEnabled ?? false;
-    final bool canBook = isOpen && isBookingEnabled;
+    final bool canBook =
+        isOpen && isBookingEnabled && status.shiftFull == null;
     final String? stopReason = status.stopReason?.trim();
 
     final BookingShift? shift = status.shift;
@@ -115,6 +116,10 @@ class _BookingStatusPanelLayout extends StatelessWidget {
       stoppedSubtitle = LocaleKeys.morning_shift_closed_today.trnsltd;
     } else if (status.shiftClosed == BookingShift.evening) {
       stoppedSubtitle = LocaleKeys.evening_shift_closed_today.trnsltd;
+    } else if (status.shiftFull == BookingShift.morning) {
+      stoppedSubtitle = LocaleKeys.morning_full.trnsltd;
+    } else if (status.shiftFull == BookingShift.evening) {
+      stoppedSubtitle = LocaleKeys.evening_full.trnsltd;
     } else {
       stoppedSubtitle = LocaleKeys.booking_closed_now.trnsltd;
     }

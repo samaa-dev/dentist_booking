@@ -4,6 +4,8 @@
     "login_email": "Email",
     "login_password": "Password",
     "login_button": "Sign In",
+    "remember_me": "Remember me",
+    "clear_saved_credentials": "Clear saved login data",
     "logout_button": "Sign Out",
     "login_footer": "Dahboard Admin Dentist Booking Â© 2025",
     "footer_made": "Made with",
