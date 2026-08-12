@@ -46,6 +46,15 @@ class SignInRepo {
     await _supabase.auth.signOut();
   }
 
+  Future<Map<String, dynamic>> fetchProfileOnce(String userId) async {
+    final row = await _supabase
+        .from('profiles')
+        .select()
+        .eq('user_id', userId)
+        .maybeSingle();
+    return row ?? {};
+  }
+
   Stream<Map<String, dynamic>> getProfile(String userId) {
     return _supabase
         .from('profiles')

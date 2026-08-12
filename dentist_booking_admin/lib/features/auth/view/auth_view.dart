@@ -58,8 +58,8 @@ class AuthView extends StatelessWidget {
       },
       builder: (context, state) {
         return state.maybeMap(
-          //On Initial State 🔄
-          initial: (_) => _buildLoading(context),
+          // Fallback: show login form until initialSession resolves
+          initial: (_) => const SignInScreen(),
 
           // On Loading 🔄
           loading: (_) => _buildLoading(context),

@@ -55,6 +55,7 @@ class AuthCubit extends Cubit<AuthState> {
         }
 
         switch (auth.event) {
+          case AuthChangeEvent.initialSession:
           case AuthChangeEvent.signedIn:
           case AuthChangeEvent.userUpdated:
             if (auth.session == null) {
@@ -94,23 +95,14 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       await _signInRepo.updateLastSeen(userId);
 
+      final profile = await _signInRepo.fetchProfileOnce(userId);
+      _emitProfileStatus(profile);
+
       await _profileSubscription?.cancel();
       _profileSubscription = _signInRepo
           .getProfile(userId)
           .listen(
-            (profile) {
-              final userStatus = (profile['status'] as String?)
-                  .toAccountStatus();
-              final userRole = (profile['role'] as String?).toUserRole();
-
-              emit(
-                AuthState.status(
-                  status: AuthStatus.authenticated,
-                  userStatus: userStatus,
-                  userRole: userRole,
-                ),
-              );
-            },
+            _emitProfileStatus,
             onError: (e) => _handleProfileError(e),
             onDone: () => _profileSubscription = null,
           );
@@ -210,6 +202,19 @@ class AuthCubit extends Cubit<AuthState> {
       // _emitError(SupabaseErrorHandler.getFriendlyMessage(e));
     }
     // await _cleanupSubscriptions();
+  }
+
+  void _emitProfileStatus(Map<String, dynamic> profile) {
+    final userStatus = (profile['status'] as String?).toAccountStatus();
+    final userRole = (profile['role'] as String?).toUserRole();
+
+    emit(
+      AuthState.status(
+        status: AuthStatus.authenticated,
+        userStatus: userStatus,
+        userRole: userRole,
+      ),
+    );
   }
 
   //Emitters for Errors
