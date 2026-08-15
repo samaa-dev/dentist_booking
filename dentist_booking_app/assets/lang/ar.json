@@ -195,6 +195,7 @@
   "morning_full": "الفترة الصباحية مكتملة",
   "evening_full": "الفترة المسائية مكتملة",
   "already_booked": "لدى المريض موعد مسبق في هذا اليوم",
+  "error_patient_name_required": "يجب إدخال اسم المريض",
   "unknown_booking_error": "تعذر إنشاء الحجز — سبب غير معروف",
   "booking_disabled": "نعتذر، الحجز غير مفعّل في الوقت الحالي.",
   "invalid_working_hours": "أوقات العمل غير محددة للفترة المحدد",

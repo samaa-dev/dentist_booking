@@ -36,9 +36,17 @@ mixin _$BookingStatusModel {
   @JsonKey(name: 'shift_closed')
   BookingShift? get shiftClosed => throw _privateConstructorUsedError;
 
-  /// When set, the current shift has reached its booking capacity.
+  /// Legacy: set only when no remaining bookable shift (blocks old clients).
   @JsonKey(name: 'shift_full')
   BookingShift? get shiftFull => throw _privateConstructorUsedError;
+  @JsonKey(name: 'morning_full')
+  bool? get morningFull => throw _privateConstructorUsedError;
+  @JsonKey(name: 'evening_full')
+  bool? get eveningFull => throw _privateConstructorUsedError;
+  @JsonKey(name: 'morning_available')
+  bool? get morningAvailable => throw _privateConstructorUsedError;
+  @JsonKey(name: 'evening_available')
+  bool? get eveningAvailable => throw _privateConstructorUsedError;
 
   /// Serializes this BookingStatusModel to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -65,6 +73,10 @@ abstract class $BookingStatusModelCopyWith<$Res> {
     @JsonKey(name: 'stop_reason') String? stopReason,
     @JsonKey(name: 'shift_closed') BookingShift? shiftClosed,
     @JsonKey(name: 'shift_full') BookingShift? shiftFull,
+    @JsonKey(name: 'morning_full') bool? morningFull,
+    @JsonKey(name: 'evening_full') bool? eveningFull,
+    @JsonKey(name: 'morning_available') bool? morningAvailable,
+    @JsonKey(name: 'evening_available') bool? eveningAvailable,
   });
 }
 
@@ -90,6 +102,10 @@ class _$BookingStatusModelCopyWithImpl<$Res, $Val extends BookingStatusModel>
     Object? stopReason = freezed,
     Object? shiftClosed = freezed,
     Object? shiftFull = freezed,
+    Object? morningFull = freezed,
+    Object? eveningFull = freezed,
+    Object? morningAvailable = freezed,
+    Object? eveningAvailable = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -121,6 +137,22 @@ class _$BookingStatusModelCopyWithImpl<$Res, $Val extends BookingStatusModel>
                 ? _value.shiftFull
                 : shiftFull // ignore: cast_nullable_to_non_nullable
                       as BookingShift?,
+            morningFull: freezed == morningFull
+                ? _value.morningFull
+                : morningFull // ignore: cast_nullable_to_non_nullable
+                      as bool?,
+            eveningFull: freezed == eveningFull
+                ? _value.eveningFull
+                : eveningFull // ignore: cast_nullable_to_non_nullable
+                      as bool?,
+            morningAvailable: freezed == morningAvailable
+                ? _value.morningAvailable
+                : morningAvailable // ignore: cast_nullable_to_non_nullable
+                      as bool?,
+            eveningAvailable: freezed == eveningAvailable
+                ? _value.eveningAvailable
+                : eveningAvailable // ignore: cast_nullable_to_non_nullable
+                      as bool?,
           )
           as $Val,
     );
@@ -144,6 +176,10 @@ abstract class _$$$BookingStatusModelImplImplCopyWith<$Res>
     @JsonKey(name: 'stop_reason') String? stopReason,
     @JsonKey(name: 'shift_closed') BookingShift? shiftClosed,
     @JsonKey(name: 'shift_full') BookingShift? shiftFull,
+    @JsonKey(name: 'morning_full') bool? morningFull,
+    @JsonKey(name: 'evening_full') bool? eveningFull,
+    @JsonKey(name: 'morning_available') bool? morningAvailable,
+    @JsonKey(name: 'evening_available') bool? eveningAvailable,
   });
 }
 
@@ -169,6 +205,10 @@ class __$$$BookingStatusModelImplImplCopyWithImpl<$Res>
     Object? stopReason = freezed,
     Object? shiftClosed = freezed,
     Object? shiftFull = freezed,
+    Object? morningFull = freezed,
+    Object? eveningFull = freezed,
+    Object? morningAvailable = freezed,
+    Object? eveningAvailable = freezed,
   }) {
     return _then(
       _$$BookingStatusModelImplImpl(
@@ -200,6 +240,22 @@ class __$$$BookingStatusModelImplImplCopyWithImpl<$Res>
             ? _value.shiftFull
             : shiftFull // ignore: cast_nullable_to_non_nullable
                   as BookingShift?,
+        morningFull: freezed == morningFull
+            ? _value.morningFull
+            : morningFull // ignore: cast_nullable_to_non_nullable
+                  as bool?,
+        eveningFull: freezed == eveningFull
+            ? _value.eveningFull
+            : eveningFull // ignore: cast_nullable_to_non_nullable
+                  as bool?,
+        morningAvailable: freezed == morningAvailable
+            ? _value.morningAvailable
+            : morningAvailable // ignore: cast_nullable_to_non_nullable
+                  as bool?,
+        eveningAvailable: freezed == eveningAvailable
+            ? _value.eveningAvailable
+            : eveningAvailable // ignore: cast_nullable_to_non_nullable
+                  as bool?,
       ),
     );
   }
@@ -207,7 +263,7 @@ class __$$$BookingStatusModelImplImplCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$$BookingStatusModelImplImpl implements _$BookingStatusModelImpl {
+class _$$BookingStatusModelImplImpl extends _$BookingStatusModelImpl {
   const _$$BookingStatusModelImplImpl({
     @JsonKey(name: 'is_open') this.isOpen,
     @JsonKey(name: 'shift') this.shift,
@@ -216,7 +272,11 @@ class _$$BookingStatusModelImplImpl implements _$BookingStatusModelImpl {
     @JsonKey(name: 'stop_reason') this.stopReason,
     @JsonKey(name: 'shift_closed') this.shiftClosed,
     @JsonKey(name: 'shift_full') this.shiftFull,
-  });
+    @JsonKey(name: 'morning_full') this.morningFull,
+    @JsonKey(name: 'evening_full') this.eveningFull,
+    @JsonKey(name: 'morning_available') this.morningAvailable,
+    @JsonKey(name: 'evening_available') this.eveningAvailable,
+  }) : super._();
 
   factory _$$BookingStatusModelImplImpl.fromJson(Map<String, dynamic> json) =>
       _$$$BookingStatusModelImplImplFromJson(json);
@@ -242,14 +302,26 @@ class _$$BookingStatusModelImplImpl implements _$BookingStatusModelImpl {
   @JsonKey(name: 'shift_closed')
   final BookingShift? shiftClosed;
 
-  /// When set, the current shift has reached its booking capacity.
+  /// Legacy: set only when no remaining bookable shift (blocks old clients).
   @override
   @JsonKey(name: 'shift_full')
   final BookingShift? shiftFull;
+  @override
+  @JsonKey(name: 'morning_full')
+  final bool? morningFull;
+  @override
+  @JsonKey(name: 'evening_full')
+  final bool? eveningFull;
+  @override
+  @JsonKey(name: 'morning_available')
+  final bool? morningAvailable;
+  @override
+  @JsonKey(name: 'evening_available')
+  final bool? eveningAvailable;
 
   @override
   String toString() {
-    return 'BookingStatusModel(isOpen: $isOpen, shift: $shift, timeLeft: $timeLeft, isBookingEnabled: $isBookingEnabled, stopReason: $stopReason, shiftClosed: $shiftClosed, shiftFull: $shiftFull)';
+    return 'BookingStatusModel(isOpen: $isOpen, shift: $shift, timeLeft: $timeLeft, isBookingEnabled: $isBookingEnabled, stopReason: $stopReason, shiftClosed: $shiftClosed, shiftFull: $shiftFull, morningFull: $morningFull, eveningFull: $eveningFull, morningAvailable: $morningAvailable, eveningAvailable: $eveningAvailable)';
   }
 
   @override
@@ -268,7 +340,15 @@ class _$$BookingStatusModelImplImpl implements _$BookingStatusModelImpl {
             (identical(other.shiftClosed, shiftClosed) ||
                 other.shiftClosed == shiftClosed) &&
             (identical(other.shiftFull, shiftFull) ||
-                other.shiftFull == shiftFull));
+                other.shiftFull == shiftFull) &&
+            (identical(other.morningFull, morningFull) ||
+                other.morningFull == morningFull) &&
+            (identical(other.eveningFull, eveningFull) ||
+                other.eveningFull == eveningFull) &&
+            (identical(other.morningAvailable, morningAvailable) ||
+                other.morningAvailable == morningAvailable) &&
+            (identical(other.eveningAvailable, eveningAvailable) ||
+                other.eveningAvailable == eveningAvailable));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -282,6 +362,10 @@ class _$$BookingStatusModelImplImpl implements _$BookingStatusModelImpl {
     stopReason,
     shiftClosed,
     shiftFull,
+    morningFull,
+    eveningFull,
+    morningAvailable,
+    eveningAvailable,
   );
 
   /// Create a copy of BookingStatusModel
@@ -301,7 +385,7 @@ class _$$BookingStatusModelImplImpl implements _$BookingStatusModelImpl {
   }
 }
 
-abstract class _$BookingStatusModelImpl implements BookingStatusModel {
+abstract class _$BookingStatusModelImpl extends BookingStatusModel {
   const factory _$BookingStatusModelImpl({
     @JsonKey(name: 'is_open') final bool? isOpen,
     @JsonKey(name: 'shift') final BookingShift? shift,
@@ -310,7 +394,12 @@ abstract class _$BookingStatusModelImpl implements BookingStatusModel {
     @JsonKey(name: 'stop_reason') final String? stopReason,
     @JsonKey(name: 'shift_closed') final BookingShift? shiftClosed,
     @JsonKey(name: 'shift_full') final BookingShift? shiftFull,
+    @JsonKey(name: 'morning_full') final bool? morningFull,
+    @JsonKey(name: 'evening_full') final bool? eveningFull,
+    @JsonKey(name: 'morning_available') final bool? morningAvailable,
+    @JsonKey(name: 'evening_available') final bool? eveningAvailable,
   }) = _$$BookingStatusModelImplImpl;
+  const _$BookingStatusModelImpl._() : super._();
 
   factory _$BookingStatusModelImpl.fromJson(Map<String, dynamic> json) =
       _$$BookingStatusModelImplImpl.fromJson;
@@ -336,10 +425,22 @@ abstract class _$BookingStatusModelImpl implements BookingStatusModel {
   @JsonKey(name: 'shift_closed')
   BookingShift? get shiftClosed;
 
-  /// When set, the current shift has reached its booking capacity.
+  /// Legacy: set only when no remaining bookable shift (blocks old clients).
   @override
   @JsonKey(name: 'shift_full')
   BookingShift? get shiftFull;
+  @override
+  @JsonKey(name: 'morning_full')
+  bool? get morningFull;
+  @override
+  @JsonKey(name: 'evening_full')
+  bool? get eveningFull;
+  @override
+  @JsonKey(name: 'morning_available')
+  bool? get morningAvailable;
+  @override
+  @JsonKey(name: 'evening_available')
+  bool? get eveningAvailable;
 
   /// Create a copy of BookingStatusModel
   /// with the given fields replaced by the non-null parameter values.

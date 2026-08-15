@@ -195,6 +195,7 @@
     "morning_full": "Morning shift is fully booked",
     "evening_full": "Evening shift is fully booked",
     "already_booked": "The patient already has an appointment on this day",
+    "error_patient_name_required": "Patient name is required",
     "unknown_booking_error": "Unable to create booking — unknown reason",
     "booking_disabled": "Sorry, booking is currently disabled.",
     "invalid_working_hours": "Working hours are not specified for the selected period",

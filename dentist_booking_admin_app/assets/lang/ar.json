@@ -273,6 +273,7 @@
   "error_guest_fullname_required": "يجب إدخال الاسم الكامل للزائر",
   "error_guest_phone_required": "يجب إدخال رقم هاتف الزائر",
   "error_guest_address_required": "يجب إدخال عنوان الزائر",
+  "error_patient_name_required": "يجب إدخال اسم المريض",
   "error_registered_select_patient": "يرجى اختيار مريض مسجل",
   "error_cancel_reason_required": "يجب إدخال سبب الإلغاء عند إلغاء الموعد",
   "day_not_exist": "لا توجد ساعات عمل لهذا اليوم",

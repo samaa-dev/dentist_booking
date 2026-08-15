@@ -222,6 +222,10 @@ class _BookingFormDialogState extends State<BookingFormDialog> {
         _showError(context, LocaleKeys.error_registered_select_patient.trnsltd);
         return;
       }
+      if (fullNameCtrl.text.trim().isEmpty) {
+        _showError(context, LocaleKeys.error_patient_name_required.trnsltd);
+        return;
+      }
     }
 
     final bool isCancelled =

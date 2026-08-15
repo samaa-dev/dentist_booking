@@ -352,6 +352,12 @@ class _CreateBookingSheetState extends State<CreateBookingSheet> {
         message: LocaleKeys.error_registered_select_patient.trnsltd,
       );
       return;
+    } else if (_fullNameCtrl.text.trim().isEmpty) {
+      SnackbarMes.showToastMsg(
+        context,
+        message: LocaleKeys.error_patient_name_required.trnsltd,
+      );
+      return;
     }
 
     if (_isCancelled && _cancelReasonCtrl.text.trim().isEmpty) {

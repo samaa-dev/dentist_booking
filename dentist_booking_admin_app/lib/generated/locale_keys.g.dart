@@ -272,6 +272,7 @@ abstract class  LocaleKeys {
   static const error_guest_fullname_required = 'error_guest_fullname_required';
   static const error_guest_phone_required = 'error_guest_phone_required';
   static const error_guest_address_required = 'error_guest_address_required';
+  static const error_patient_name_required = 'error_patient_name_required';
   static const error_registered_select_patient = 'error_registered_select_patient';
   static const error_cancel_reason_required = 'error_cancel_reason_required';
   static const day_not_exist = 'day_not_exist';

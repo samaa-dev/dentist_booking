@@ -80,14 +80,15 @@ class _BookingStatusPanelLayout extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final locale = context.locale;
 
-    final bool isOpen = status.isOpen ?? false;
     final bool isBookingEnabled = status.isBookingEnabled ?? false;
-    final bool canBook =
-        isOpen && isBookingEnabled && status.shiftFull == null;
+    final bool hasBookableShift = status.hasAnyBookableShift;
+    final bool canBook = isBookingEnabled && hasBookableShift;
     final String? stopReason = status.stopReason?.trim();
 
     final BookingShift? shift = status.shift;
     final bool isMorningShift = shift == BookingShift.morning;
+    final bool morningFull = status.isShiftFull(BookingShift.morning);
+    final bool eveningFull = status.isShiftFull(BookingShift.evening);
 
     final statusColor = canBook
         ? colorScheme.primary
@@ -95,7 +96,7 @@ class _BookingStatusPanelLayout extends StatelessWidget {
     final String statusText;
     if (!isBookingEnabled) {
       statusText = LocaleKeys.booking_status_stopped.trnsltd;
-    } else if (!isOpen) {
+    } else if (!hasBookableShift) {
       statusText = LocaleKeys.booking_status_closed.trnsltd;
     } else {
       statusText = LocaleKeys.booking_status_open.trnsltd;
@@ -107,18 +108,31 @@ class _BookingStatusPanelLayout extends StatelessWidget {
               ? LocaleKeys.booking_morning.trnsltd
               : LocaleKeys.booking_evening.trnsltd);
 
+    final String? capacityNotice;
+    if (canBook && morningFull && !eveningFull) {
+      capacityNotice = LocaleKeys.morning_full.trnsltd;
+    } else if (canBook && eveningFull && !morningFull) {
+      capacityNotice = LocaleKeys.evening_full.trnsltd;
+    } else {
+      capacityNotice = null;
+    }
+
     final String stoppedSubtitle;
     if (!isBookingEnabled) {
       stoppedSubtitle = (stopReason != null && stopReason.isNotEmpty)
           ? stopReason
           : LocaleKeys.booking_disabled.trnsltd;
-    } else if (status.shiftClosed == BookingShift.morning) {
+    } else if (status.shiftClosed == BookingShift.morning &&
+        !status.isShiftAvailable(BookingShift.evening)) {
       stoppedSubtitle = LocaleKeys.morning_shift_closed_today.trnsltd;
-    } else if (status.shiftClosed == BookingShift.evening) {
+    } else if (status.shiftClosed == BookingShift.evening &&
+        !status.isShiftAvailable(BookingShift.morning)) {
       stoppedSubtitle = LocaleKeys.evening_shift_closed_today.trnsltd;
-    } else if (status.shiftFull == BookingShift.morning) {
+    } else if (morningFull && eveningFull) {
+      stoppedSubtitle = LocaleKeys.evening_full.trnsltd;
+    } else if (morningFull && !hasBookableShift) {
       stoppedSubtitle = LocaleKeys.morning_full.trnsltd;
-    } else if (status.shiftFull == BookingShift.evening) {
+    } else if (eveningFull && !hasBookableShift) {
       stoppedSubtitle = LocaleKeys.evening_full.trnsltd;
     } else {
       stoppedSubtitle = LocaleKeys.booking_closed_now.trnsltd;
@@ -220,6 +234,16 @@ class _BookingStatusPanelLayout extends StatelessWidget {
                     const SizedBox(height: 10),
                     Text(
                       stoppedSubtitle,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.bodySmall!.copyWith(
+                        color: colorScheme.onSurface.withOpacity(.7),
+                      ),
+                    ),
+                  ] else if (capacityNotice != null) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      capacityNotice,
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                       style: textTheme.bodySmall!.copyWith(

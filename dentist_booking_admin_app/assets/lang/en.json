@@ -270,6 +270,7 @@
     "error_guest_fullname_required": "Full name is required for guest",
     "error_guest_phone_required": "Phone number is required for guest",
     "error_guest_address_required": "Address is required for guest",
+    "error_patient_name_required": "Patient name is required",
     "error_registered_select_patient": "Please select a registered patient",
     "error_cancel_reason_required": "Cancel reason is required when booking is cancelled",
     "day_not_exist": "No working hours available for this day",

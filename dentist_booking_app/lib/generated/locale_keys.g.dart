@@ -180,6 +180,7 @@ abstract class  LocaleKeys {
   static const morning_full = 'morning_full';
   static const evening_full = 'evening_full';
   static const already_booked = 'already_booked';
+  static const error_patient_name_required = 'error_patient_name_required';
   static const unknown_booking_error = 'unknown_booking_error';
   static const booking_disabled = 'booking_disabled';
   static const invalid_working_hours = 'invalid_working_hours';

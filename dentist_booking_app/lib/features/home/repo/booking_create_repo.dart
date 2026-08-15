@@ -101,6 +101,8 @@ class BookingCreateRepo {
         return LocaleKeys.already_booked.trnsltd;
       case 'already_has_self_booking_today':
         return LocaleKeys.already_has_active_booking.trnsltd;
+      case 'patient_name_required':
+        return LocaleKeys.error_patient_name_required.trnsltd;
       default:
         return LocaleKeys.unknown_booking_error.trnsltd;
     }

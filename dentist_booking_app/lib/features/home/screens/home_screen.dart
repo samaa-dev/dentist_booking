@@ -52,10 +52,16 @@ class HomeScreen extends StatelessWidget {
               );
               // تحديث معلومات الطابور بعد نجاح الحجز
               context.read<QueueCubit>().loadActiveBookingQueue();
+              context
+                  .read<BookingStatusCubit>()
+                  .loadStatus(showLoading: false);
             },
             errorBookingCreate: (message) {
               if (Navigator.canPop(context)) Navigator.pop(context);
               SnackbarMes.showToastMsg(context, message: message);
+              context
+                  .read<BookingStatusCubit>()
+                  .loadStatus(showLoading: false);
             },
           );
         },
@@ -145,14 +151,26 @@ class _HomeLayout extends StatelessWidget {
                         if (isGuest) {
                           _showGuestLoginDialog(context);
                         } else {
+                          final statusState =
+                              context.read<BookingStatusCubit>().state;
+                          final bookingStatus = statusState.maybeWhen(
+                            loaded: (status) => status,
+                            orElse: () => null,
+                          );
                           showDialog(
                             context: context,
                             builder: (_) => MultiBlocProvider(
                               providers: [
-                                BlocProvider.value(value: context.read<BookingCreateCubit>()),
-                                BlocProvider.value(value: context.read<AuthCubit>()),
+                                BlocProvider.value(
+                                  value: context.read<BookingCreateCubit>(),
+                                ),
+                                BlocProvider.value(
+                                  value: context.read<AuthCubit>(),
+                                ),
                               ],
-                              child: const BookingCreateScreen(),
+                              child: BookingCreateScreen(
+                                bookingStatus: bookingStatus,
+                              ),
                             ),
                           );
                         }
