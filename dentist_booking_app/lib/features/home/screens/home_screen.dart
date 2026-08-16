@@ -44,19 +44,25 @@ class HomeScreen extends StatelessWidget {
               barrierDismissible: false,
               builder: (_) => LoadingDialog(),
             ),
-            successBookingCreate: (booking) {
+            successBookingCreate: (booking) async {
+              // Close loading dialog, then create dialog.
+              if (Navigator.canPop(context)) Navigator.pop(context);
               if (Navigator.canPop(context)) Navigator.pop(context);
               SnackbarMes.showToastMsg(
                 context,
                 message: LocaleKeys.booking_add_success.trnsltd,
               );
-              // تحديث معلومات الطابور بعد نجاح الحجز
-              context.read<QueueCubit>().loadActiveBookingQueue();
+              // Wait until home queue re-reads from get_my_bookings_for_date_range.
+              await context
+                  .read<QueueCubit>()
+                  .loadActiveBookingQueue(force: true);
+              if (!context.mounted) return;
               context
                   .read<BookingStatusCubit>()
                   .loadStatus(showLoading: false);
             },
             errorBookingCreate: (message) {
+              // Close loading dialog only; keep create form for retry.
               if (Navigator.canPop(context)) Navigator.pop(context);
               SnackbarMes.showToastMsg(context, message: message);
               context

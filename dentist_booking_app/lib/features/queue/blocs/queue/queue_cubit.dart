@@ -118,10 +118,22 @@ class QueueCubit extends Cubit<QueueState> {
       if (isClosed) return;
       emit(QueueState.activeQueueLoaded(queues));
       _syncPollTimer(hasActiveQueues: queues.isNotEmpty);
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('loadActiveBookingQueue failed: $e');
+      debugPrint('$st');
       if (isClosed) return;
-      emit(QueueState.activeQueueLoaded([]));
-      _syncPollTimer(hasActiveQueues: false);
+      // Do not silently replace a known non-empty panel with [].
+      final previous = state.maybeWhen(
+        activeQueueLoaded: (queues) => queues,
+        orElse: () => <TrackingModel>[],
+      );
+      if (previous.isNotEmpty) {
+        emit(QueueState.activeQueueLoaded(previous));
+        _syncPollTimer(hasActiveQueues: true);
+      } else {
+        emit(QueueState.error(e.toString()));
+        _syncPollTimer(hasActiveQueues: false);
+      }
     } finally {
       _loadInFlight = false;
     }

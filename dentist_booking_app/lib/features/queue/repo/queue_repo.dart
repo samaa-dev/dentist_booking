@@ -1,5 +1,6 @@
 import 'package:dentist_booking_app/core/enum/enum.dart';
 import 'package:dentist_booking_app/core/model/booking_model.dart';
+import 'package:dentist_booking_app/core/model/queue_stats_model.dart';
 import 'package:dentist_booking_app/core/model/tracking_model.dart';
 import 'package:dentist_booking_app/features/booking/repo/booking_repo.dart';
 import 'package:flutter/foundation.dart';
@@ -36,13 +37,32 @@ class QueueRepo {
 
       if (response == null) {
         return null;
-      } else {
-        return TrackingModel.fromJson(response);
       }
+
+      final map = response is Map<String, dynamic>
+          ? response
+          : Map<String, dynamic>.from(response as Map);
+      return TrackingModel.fromJson(map);
     } catch (e) {
       debugPrint("Failed to fetch tracking details: $e");
       throw Exception('Failed to fetch tracking details: $e');
     }
+  }
+
+  /// Minimal tracking from list row when get_booking_tracking fails.
+  TrackingModel _fallbackTrackingFromBooking(BookingModel booking) {
+    final peopleBefore = booking.peopleBefore ?? 0;
+    return TrackingModel(
+      booking: booking,
+      queueStats: QueueStatsModel(
+        isPaused: false,
+        currentQueueNumber: 0,
+        patientsBeforeYou: peopleBefore,
+        lastUpdated: DateTime.now(),
+        totalInQueue: peopleBefore + 1,
+        estimatedWaitTime: peopleBefore * 15,
+      ),
+    );
   }
 
   /// Bookings shown on today's home panel: active + already called.
@@ -57,18 +77,20 @@ class QueueRepo {
     return isVisibleStatus && hasTicket;
   }
 
+  bool _isSameLocalDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
   Future<TrackingModel?> getActiveBookingQueue() async {
     try {
       final today = DateTime.now();
 
-      // جلب حجوزات المستخدم لليوم الحالي
       final bookings = await _bookingRepo.getBookings(
         startDate: DateTime(today.year, today.month, today.day),
         endDate: DateTime(today.year, today.month, today.day, 23, 59, 59),
         searchQuery: null,
       );
 
-      // نشط أو تم استدعاؤه اليوم (completed / noShow)
       BookingModel? activeBooking;
       try {
         activeBooking = bookings.firstWhere(_isTodayHomeVisibleBooking);
@@ -76,7 +98,16 @@ class QueueRepo {
         return null;
       }
 
-      return await getBookingQueue(ticketCode: activeBooking.ticketCode!);
+      try {
+        final queue =
+            await getBookingQueue(ticketCode: activeBooking.ticketCode!);
+        return queue ?? _fallbackTrackingFromBooking(activeBooking);
+      } catch (e) {
+        debugPrint(
+          "Tracking failed for ${activeBooking.ticketCode}, using fallback: $e",
+        );
+        return _fallbackTrackingFromBooking(activeBooking);
+      }
     } catch (e) {
       debugPrint("Failed to fetch active booking queue: $e");
       return null;
@@ -87,7 +118,6 @@ class QueueRepo {
     try {
       final today = DateTime.now();
 
-      // جلب حجوزات المستخدم لليوم الحالي
       final bookings = await _bookingRepo.getBookings(
         startDate: DateTime(today.year, today.month, today.day),
         endDate: DateTime(today.year, today.month, today.day, 23, 59, 59),
@@ -105,11 +135,12 @@ class QueueRepo {
       for (final booking in visibleBookings) {
         try {
           final queue = await getBookingQueue(ticketCode: booking.ticketCode!);
-          if (queue != null) {
-            queues.add(queue);
-          }
+          queues.add(queue ?? _fallbackTrackingFromBooking(booking));
         } catch (e) {
-          debugPrint("Failed to fetch queue for ticket ${booking.ticketCode}: $e");
+          debugPrint(
+            "Failed to fetch queue for ticket ${booking.ticketCode}: $e — using list fallback",
+          );
+          queues.add(_fallbackTrackingFromBooking(booking));
         }
       }
 
@@ -120,28 +151,30 @@ class QueueRepo {
     }
   }
 
+  /// Self-booking = empty guest_name (same rule as create_booking server check).
+  /// List RPC always fills patient_name from profile, so patientName == null is wrong.
   Future<bool> hasActiveBookingForCurrentUser() async {
     try {
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) return false;
+
       final today = DateTime.now();
-      
-      // جلب حجوزات المستخدم لليوم الحالي
-      final bookings = await _bookingRepo.getBookings(
-        startDate: DateTime(today.year, today.month, today.day),
-        endDate: DateTime(today.year, today.month, today.day, 23, 59, 59),
-        searchQuery: null,
-      );
+      final rows = await _client
+          .from('bookings')
+          .select('id, guest_name, booking_status, booking_date')
+          .eq('patient_id', userId)
+          .inFilter('booking_status', ['pending', 'confirmed']);
 
-      // البحث عن حجز فعال للمستخدم نفسه
-      // بما أن patientId دائماً currentUserId (حتى عند الحجز لشخص آخر)
-      // نتحقق من patientName == null للتمييز بين الحجز للمستخدم نفسه والحجز لشخص آخر
-      final hasActiveBooking = bookings.any(
-        (booking) =>
-            (booking.bookingStatus == BookingStatus.pending ||
-                booking.bookingStatus == BookingStatus.confirmed) &&
-            booking.patientName == null, // patientName == null يعني الحجز للمستخدم نفسه وليس لشخص آخر
-      );
+      return rows.any((row) {
+        final guestName = (row['guest_name'] as String?)?.trim() ?? '';
+        if (guestName.isNotEmpty) return false;
 
-      return hasActiveBooking;
+        final rawDate = row['booking_date'];
+        if (rawDate == null) return false;
+        final bookingDate = DateTime.tryParse(rawDate.toString());
+        if (bookingDate == null) return false;
+        return _isSameLocalDay(bookingDate, today);
+      });
     } catch (e) {
       debugPrint("Failed to check active booking for current user: $e");
       return false;

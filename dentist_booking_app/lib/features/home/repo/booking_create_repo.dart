@@ -17,53 +17,77 @@ class BookingCreateRepo {
     debugPrint("SENDING TIMESTAMP -> ${model.bookingDate.toIso8601String()}");
 
     try {
-      final resp = await _client
-          .rpc(
-            'create_booking',
-            params: {
-              "p_booking_date": model.bookingDate.toIso8601String(),
-              "p_patient_id": model.patientId, // تأكد من إرسال id المريض (قد يكون null للضيف)
-              "p_patient_type": model.patientType?.code ?? "registered",
-              "p_guest_name": model.patientName ?? "",
-              "p_guest_phone": model.patientPhone ?? "",
-              "p_guest_address": model.patientAddress ?? "",
-              "p_shift": model.shift.code,
-              "p_booking_status": "pending", // مطلوب حسب الـ Hint
-              "p_booking_created_by": _client.auth.currentUser?.id,
-              "p_created_at": DateTime.now().toIso8601String(), // مطلوب
-              "p_updated_at": DateTime.now().toIso8601String(), // مطلوب
-              "p_cancelled_at": null, // مطلوب
-              "p_completed_at": null, // مطلوب
-              "p_cancelled_by": null, // مطلوب
-              "p_cancel_reason": null, // مطلوب
-            },
-          )
-          .select()
-          .single();
+      final resp = await _client.rpc(
+        'create_booking',
+        params: {
+          "p_booking_date": model.bookingDate.toIso8601String(),
+          "p_patient_id": model.patientId,
+          "p_patient_type": model.patientType?.code ?? "registered",
+          "p_guest_name": model.patientName ?? "",
+          "p_guest_phone": model.patientPhone ?? "",
+          "p_guest_address": model.patientAddress ?? "",
+          "p_shift": model.shift.code,
+          "p_booking_status": "pending",
+          "p_booking_created_by": _client.auth.currentUser?.id,
+          "p_created_at": DateTime.now().toIso8601String(),
+          "p_updated_at": DateTime.now().toIso8601String(),
+          "p_cancelled_at": null,
+          "p_completed_at": null,
+          "p_cancelled_by": null,
+          "p_cancel_reason": null,
+        },
+      );
 
-      // ===== تحقق من نجاح عملية الحجز =====
-      if (resp['success'] == false) {
-        final reason = resp['reason'] ?? "unknown_booking_error";
-        final message = resp['message'];
-
-        debugPrint("❌ Failed to create booking: ${resp['reason']}");
-        throw Exception(_mapReasonToMessage(reason, message));
-      }
-
-      debugPrint("✅ RPC RESPONSE: $resp");
-
-      final data = resp['data'];
-      if (data == null) {
+      if (resp is! Map) {
         throw Exception(LocaleKeys.unknown_booking_error.tr());
       }
 
-      debugPrint("✅ RPC DATA CREATE: $data");
+      final response = Map<String, dynamic>.from(resp);
 
-      return BookingModel.fromJson(data as Map<String, dynamic>);
+      if (response['success'] == false) {
+        final reason = response['reason'] ?? "unknown_booking_error";
+        final message = response['message'];
+
+        debugPrint("❌ Failed to create booking: ${response['reason']}");
+        throw Exception(
+          _mapReasonToMessage(
+            reason.toString(),
+            message is Map ? Map<String, dynamic>.from(message) : null,
+          ),
+        );
+      }
+
+      debugPrint("✅ RPC RESPONSE: $response");
+
+      final data = response['data'];
+      if (data is! Map) {
+        throw Exception(LocaleKeys.unknown_booking_error.tr());
+      }
+
+      final normalized = _normalizeCreateBookingData(
+        Map<String, dynamic>.from(data),
+      );
+      debugPrint("✅ RPC DATA CREATE: $normalized");
+
+      return BookingModel.fromJson(normalized);
     } catch (e) {
       debugPrint("❌ Failed to create booking: $e");
       throw Exception('Failed to create booking: $e');
     }
+  }
+
+  /// create_booking returns guest_* fields; BookingModel expects patient_*.
+  Map<String, dynamic> _normalizeCreateBookingData(Map<String, dynamic> data) {
+    return {
+      ...data,
+      'id': data['id']?.toString(),
+      'patient_id': data['patient_id']?.toString(),
+      'booking_created_by': data['booking_created_by']?.toString(),
+      'cancelled_by': data['cancelled_by']?.toString(),
+      'patient_name': data['patient_name'] ?? data['guest_name'],
+      'patient_phone': data['patient_phone'] ?? data['guest_phone'],
+      'patient_address': data['patient_address'] ?? data['guest_address'],
+    };
   }
 
   String _mapReasonToMessage(String reason, Map<String, dynamic>? message) {

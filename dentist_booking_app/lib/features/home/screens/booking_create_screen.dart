@@ -363,6 +363,7 @@ class _BookingCreateScreenState extends State<BookingCreateScreen> {
       }
     }
 
+    // Do not pop here — home_screen closes loading + create dialogs after RPC.
     context.read<BookingCreateCubit>().createBooking(
       BookingModel(
         bookingDate: bookingDate,
@@ -379,7 +380,5 @@ class _BookingCreateScreenState extends State<BookingCreateScreen> {
         createdAt: DateTime.now(),
       ),
     );
-
-    Navigator.of(context).pop();
   }
 }

@@ -30,6 +30,18 @@ class BookingStatusPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<QueueCubit, QueueState>(
         builder: (context, queueState) {
+          final errorMessage = queueState.maybeWhen(
+            error: (message) => message,
+            orElse: () => null,
+          );
+          if (errorMessage != null) {
+            return BookingStatusErrorPanel(
+              message: errorMessage,
+              onRetry: () =>
+                  context.read<QueueCubit>().loadActiveBookingQueue(force: true),
+            );
+          }
+
           // التحقق من وجود حجوزات فعالة
           final activeQueues = queueState.maybeWhen(
             activeQueueLoaded: (queues) => queues as List<dynamic>,

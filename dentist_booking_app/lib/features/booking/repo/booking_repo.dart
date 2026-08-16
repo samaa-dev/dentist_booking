@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/model/booking_model.dart';
+import 'booking_list_mapper.dart';
 
 class BookingRepo {
   final SupabaseClient _client;
@@ -15,44 +16,54 @@ class BookingRepo {
     required DateTime? endDate,
     required String? searchQuery,
   }) async {
-    try {
-      final isSearchEmpty = searchQuery == null || searchQuery.trim().isEmpty;
+    final user = _client.auth.currentUser;
+    if (user == null) {
+      throw Exception('not_authenticated');
+    }
 
-      debugPrint("📥 Calling RPC: get_all_bookings_with_filters_app");
-      debugPrint("📥 Params: p_user_id=${_client.auth.currentUser!.id}, p_start_date=${startDate?.toIso8601String().split('T').first}, p_end_date=${endDate?.toIso8601String().split('T').first}");
+    final isSearchEmpty = searchQuery == null || searchQuery.trim().isEmpty;
+    final start = startDate?.toIso8601String().split('T').first;
+    final end = endDate?.toIso8601String().split('T').first;
+
+    try {
+      debugPrint('📥 Calling RPC: get_my_bookings_for_date_range');
+      debugPrint(
+        '📥 Params: auth.uid=${user.id}, p_start_date=$start, p_end_date=$end',
+      );
 
       final response = await _client.rpc(
-        'get_all_bookings_with_filters_app',
+        'get_my_bookings_for_date_range',
         params: {
-          'p_user_id': _client.auth.currentUser!.id,
-          'p_start_date': startDate?.toIso8601String().split('T').first,
-          'p_end_date': endDate?.toIso8601String().split('T').first,
-          'p_search_query': isSearchEmpty ? null : searchQuery,
+          'p_start_date': start,
+          'p_end_date': end,
+          'p_search_query': isSearchEmpty ? null : searchQuery.trim(),
         },
       );
 
-      // ✅ إضافة debug logging
-      debugPrint("📥 RPC Response type: ${response.runtimeType}");
-      debugPrint("📥 RPC Response length: ${response is List ? response.length : 'N/A'}");
-      
+      debugPrint('📥 RPC Response type: ${response.runtimeType}');
+      debugPrint(
+        '📥 RPC Response length: ${response is List ? response.length : 'N/A'}',
+      );
+
       if (response is List && response.isNotEmpty) {
-        debugPrint("📥 First booking JSON: ${response[0]}");
-        debugPrint("📥 First booking patient_name: ${response[0]['patient_name']}");
-        debugPrint("📥 First booking guest_name: ${response[0]['guest_name']}");
-        debugPrint("📥 First booking patient_id: ${response[0]['patient_id']}");
-        debugPrint("📥 First booking patient_type: ${response[0]['patient_type']}");
+        debugPrint('📥 First booking JSON: ${response[0]}');
+        debugPrint(
+          '📥 First booking patient_name: ${response[0]['patient_name']}',
+        );
+        debugPrint(
+          '📥 First booking patient_id: ${response[0]['patient_id']}',
+        );
+        debugPrint(
+          '📥 First booking ticket_code: ${response[0]['ticket_code']}',
+        );
       }
 
-      return (response as List)
-          .map((item) {
-            // ✅ إضافة debug logging قبل parsing
-            debugPrint("📥 Parsing booking: id=${item['id']}, patient_name=${item['patient_name']}, guest_name=${item['guest_name']}");
-            return BookingModel.fromJson(item);
-          })
-          .toList();
-    } catch (e) {
-      debugPrint("❌ Failed to fetch bookings: $e");
-      throw Exception("Failed to fetch bookings");
+      return BookingListMapper.mapRpcResponse(response);
+    } catch (e, st) {
+      debugPrint('❌ Failed to fetch bookings: $e');
+      debugPrint('$st');
+      // Preserve original cause so UI can distinguish empty vs hard failure.
+      throw Exception('Failed to fetch bookings: $e');
     }
   }
 
