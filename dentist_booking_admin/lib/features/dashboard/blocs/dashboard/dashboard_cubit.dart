@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../../../../core/app_setup.dart';
+import '../../../../core/services/session_service.dart';
 import '../../../../core/model/dashboard_stats_model.dart';
 import '../../../../generated/locale_keys.g.dart';
 import '../../repo/dashboard_repo.dart';
@@ -25,6 +27,7 @@ class DashboardCubit extends Cubit<DashboardState> {
       final stats = await _dashboardRepo.getDashboardStats();
       emit(DashboardState.loaded(stats));
     } catch (e) {
+      if (getIt<SessionService>().handleIfExpired(e)) return;
       debugPrint(e.toString());
       emit(DashboardState.error(LocaleKeys.profile_error_load.trnsltd));
     }

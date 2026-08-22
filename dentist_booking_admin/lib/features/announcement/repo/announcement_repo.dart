@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/model/announcement_model.dart';
+import '../../../core/util/session_guard.dart';
 
 class AnnouncementRepo {
   final SupabaseClient _client;
@@ -22,6 +23,8 @@ class AnnouncementRepo {
           .map((e) => AnnouncementModel.fromJson(e))
           .toList();
     } catch (e) {
+      final sessionError = SessionGuard.asSessionExpired(e);
+      if (sessionError != null) throw sessionError;
       debugPrint("❌ Failed to fetch announcements list: $e");
       throw Exception('Failed to fetch announcements list: $e');
     }
@@ -51,6 +54,8 @@ class AnnouncementRepo {
 
       return AnnouncementModel.fromJson(resp);
     } catch (e) {
+      final sessionError = SessionGuard.asSessionExpired(e);
+      if (sessionError != null) throw sessionError;
       debugPrint("❌ Failed to create announcement: $e");
       throw Exception('Failed to create announcement: $e');
     }
@@ -79,6 +84,8 @@ class AnnouncementRepo {
 
       return AnnouncementModel.fromJson(resp);
     } catch (e) {
+      final sessionError = SessionGuard.asSessionExpired(e);
+      if (sessionError != null) throw sessionError;
       debugPrint("❌ Failed to update announcement: $e");
       throw Exception('Failed to update announcement: $e');
     }
@@ -96,6 +103,8 @@ class AnnouncementRepo {
 
       return resp['deleted_id'] as String;
     } catch (e) {
+      final sessionError = SessionGuard.asSessionExpired(e);
+      if (sessionError != null) throw sessionError;
       throw Exception("Failed to delete announcement: $e");
     }
   }
@@ -131,6 +140,8 @@ class AnnouncementRepo {
     } on StorageException catch (e) {
       throw Exception('Failed to upload image: ${e.message}');
     } catch (e) {
+      final sessionError = SessionGuard.asSessionExpired(e);
+      if (sessionError != null) throw sessionError;
       throw Exception('Failed to upload image: $e');
     }
   }

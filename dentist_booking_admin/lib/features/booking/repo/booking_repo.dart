@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/enum/enum.dart';
 import '../../../core/model/booking_model.dart';
 import '../../../core/model/profile_model.dart';
+import '../../../core/util/session_guard.dart';
 import '../../../generated/locale_keys.g.dart';
 
 class BookingRepo {
@@ -23,6 +24,8 @@ class BookingRepo {
           .map<BookingModel>((e) => BookingModel.fromJson(e))
           .toList();
     } catch (e) {
+      final sessionError = SessionGuard.asSessionExpired(e);
+      if (sessionError != null) throw sessionError;
       debugPrint("Failed to fetch bookings list: $e");
       throw Exception("Failed to fetch bookings");
     }
@@ -40,6 +43,8 @@ class BookingRepo {
           .map<ProfileModel>((e) => ProfileModel.fromJson(e))
           .toList();
     } catch (e) {
+      final sessionError = SessionGuard.asSessionExpired(e);
+      if (sessionError != null) throw sessionError;
       debugPrint("Failed to fetch patients list: $e");
       throw Exception("Failed to fetch patients");
     }
@@ -99,6 +104,8 @@ class BookingRepo {
 
       return BookingModel.fromJson(resp['data'] as Map<String, dynamic>);
     } catch (e) {
+      final sessionError = SessionGuard.asSessionExpired(e);
+      if (sessionError != null) throw sessionError;
       debugPrint("❌ Failed to create booking: $e");
       throw Exception('Failed to create booking: $e');
     }
@@ -144,6 +151,8 @@ class BookingRepo {
 
       return BookingModel.fromJson(resp['data']);
     } catch (e) {
+      final sessionError = SessionGuard.asSessionExpired(e);
+      if (sessionError != null) throw sessionError;
       debugPrint("❌ Failed to update booking: $e");
       throw Exception('Failed to update booking: $e');
     }
@@ -207,6 +216,8 @@ class BookingRepo {
 
       return true;
     } catch (e) {
+      final sessionError = SessionGuard.asSessionExpired(e);
+      if (sessionError != null) throw sessionError;
       debugPrint("❌ Failed to delete booking: $e");
       throw Exception("Failed to delete booking: $e");
     }
@@ -237,6 +248,8 @@ class BookingRepo {
           .map((item) => BookingModel.fromJson(item))
           .toList();
     } catch (e) {
+      final sessionError = SessionGuard.asSessionExpired(e);
+      if (sessionError != null) throw sessionError;
       debugPrint("Failed to fetch bookings: $e");
       throw Exception("Failed to fetch bookings");
     }

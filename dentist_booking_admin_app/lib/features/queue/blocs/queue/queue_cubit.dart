@@ -5,6 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/app_setup.dart';
+import '../../../../core/services/session_service.dart';
 import '../../../../core/model/booking_model.dart';
 import '../../../../core/model/queue_model.dart';
 import '../../../../core/model/queue_status_model.dart';
@@ -38,7 +40,10 @@ class QueueCubit extends Cubit<QueueState> {
         debugPrint('Queue: bookings changed → scheduling status refresh');
         _scheduleStatusRefresh();
       },
-      onError: (e) => debugPrint('Queue bookings stream error: $e'),
+      onError: (e) {
+        if (getIt<SessionService>().handleIfExpired(e)) return;
+        debugPrint('Queue bookings stream error: $e');
+      },
     );
   }
 
@@ -67,6 +72,7 @@ class QueueCubit extends Cubit<QueueState> {
       final status = await _queueRepo.statusQueue();
       emit(QueueState.statusLoaded(status));
     } catch (e) {
+      if (getIt<SessionService>().handleIfExpired(e)) return;
       emit(
         QueueState.error(
           e.toString().replaceFirst(
@@ -89,6 +95,7 @@ class QueueCubit extends Cubit<QueueState> {
       final status = await _queueRepo.statusQueue();
       emit(QueueState.statusLoaded(status));
     } catch (e) {
+      if (getIt<SessionService>().handleIfExpired(e)) return;
       emit(
         QueueState.error(
           e.toString().replaceFirst(
@@ -113,6 +120,7 @@ class QueueCubit extends Cubit<QueueState> {
       final status = await _queueRepo.statusQueue();
       emit(QueueState.statusLoaded(status));
     } catch (e) {
+      if (getIt<SessionService>().handleIfExpired(e)) return;
       emit(
         QueueState.error(
           e.toString().replaceFirst('Exception: ', ''),
@@ -134,6 +142,7 @@ class QueueCubit extends Cubit<QueueState> {
       debugPrint('Booking updated: $created');
       await nextQueue();
     } catch (e) {
+      if (getIt<SessionService>().handleIfExpired(e)) return;
       debugPrint('Update then next error: $e');
       emit(
         QueueState.errorUpdateBooking(
@@ -165,6 +174,7 @@ class QueueCubit extends Cubit<QueueState> {
       final status = await _queueRepo.statusQueue();
       emit(QueueState.statusLoaded(status));
     } catch (e) {
+      if (getIt<SessionService>().handleIfExpired(e)) return;
       emit(
         QueueState.error(
           e.toString().replaceFirst('Exception: ', ''),
@@ -180,6 +190,7 @@ class QueueCubit extends Cubit<QueueState> {
       final status = await _queueRepo.statusQueue();
       emit(QueueState.statusLoaded(status));
     } catch (e) {
+      if (getIt<SessionService>().handleIfExpired(e)) return;
       emit(
         QueueState.error(
           e.toString().replaceFirst('Exception: ', ''),

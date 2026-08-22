@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/model/profile_model.dart';
 import '../../../core/model/staff_model.dart';
+import '../../../core/util/session_guard.dart';
 
 class StaffRepo {
   final SupabaseClient _client;
@@ -22,6 +23,8 @@ class StaffRepo {
           .map<ProfileModel>((e) => ProfileModel.fromJson(e))
           .toList();
     } catch (e) {
+      final sessionError = SessionGuard.asSessionExpired(e);
+      if (sessionError != null) throw sessionError;
       debugPrint("Failed to fetch profile list: $e");
       throw Exception('Failed to fetch profile list: $e');
     }
@@ -34,6 +37,8 @@ class StaffRepo {
 
       return response.map<StaffModel>((e) => StaffModel.fromJson(e)).toList();
     } catch (e) {
+      final sessionError = SessionGuard.asSessionExpired(e);
+      if (sessionError != null) throw sessionError;
       throw Exception('Failed to fetch staff list: $e');
     }
   }
@@ -51,6 +56,8 @@ class StaffRepo {
 
       return StaffModel.fromJson(resp);
     } catch (e) {
+      final sessionError = SessionGuard.asSessionExpired(e);
+      if (sessionError != null) throw sessionError;
       throw Exception('Failed to load staff: $e');
     }
   }
@@ -78,6 +85,8 @@ class StaffRepo {
 
       return StaffModel.fromJson(resp);
     } catch (e) {
+      final sessionError = SessionGuard.asSessionExpired(e);
+      if (sessionError != null) throw sessionError;
       debugPrint(e.toString());
       throw Exception('Failed to create staff: $e');
     }
@@ -104,6 +113,8 @@ class StaffRepo {
 
       return StaffModel.fromJson(resp);
     } catch (e) {
+      final sessionError = SessionGuard.asSessionExpired(e);
+      if (sessionError != null) throw sessionError;
       throw Exception('Failed to update staff: $e');
     }
   }
@@ -118,6 +129,8 @@ class StaffRepo {
 
       return resp == true;
     } catch (e) {
+      final sessionError = SessionGuard.asSessionExpired(e);
+      if (sessionError != null) throw sessionError;
       throw Exception('Failed to delete staff: $e');
     }
   }
@@ -150,6 +163,8 @@ class StaffRepo {
 
       return false;
     } catch (e) {
+      final sessionError = SessionGuard.asSessionExpired(e);
+      if (sessionError != null) throw sessionError;
       throw Exception("Failed to change password: $e");
     }
   }

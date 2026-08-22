@@ -12,12 +12,16 @@ import '../features/settings/blocs/settings/settings_cubit.dart';
 import '../features/settings/repo/settings_repo.dart';
 import 'blocs/pages/pages_cubit.dart';
 import 'blocs/theme/theme_cubit.dart';
+import 'services/session_service.dart';
 
 final getIt = GetIt.I;
 
 Future<void> setUp() async {
   final client = Supabase.instance.client;
   getIt.registerLazySingleton<SupabaseClient>(() => client);
+
+  final sessionService = SessionService();
+  getIt.registerLazySingleton<SessionService>(() => sessionService);
 
   final signInRepo = SignInRepo(supabase: client);
   getIt.registerLazySingleton<SignInRepo>(() => signInRepo);
@@ -30,6 +34,7 @@ Future<void> setUp() async {
       signInRepo: signInRepo,
       client: client,
       credentialsStore: credentialsStore,
+      sessionService: sessionService,
     ),
   );
 

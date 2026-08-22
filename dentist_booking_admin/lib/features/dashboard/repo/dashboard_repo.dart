@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/model/dashboard_stats_model.dart';
+import '../../../core/util/session_guard.dart';
 
 class DashboardRepo {
   final SupabaseClient _client;
@@ -16,6 +17,8 @@ class DashboardRepo {
 
       return DashboardStatsModel.fromJson(resp);
     } catch (e) {
+      final sessionError = SessionGuard.asSessionExpired(e);
+      if (sessionError != null) throw sessionError;
       debugPrint("Failed to fetch dashboard stats: $e");
       throw Exception('Failed to fetch dashboard stats: $e');
     }

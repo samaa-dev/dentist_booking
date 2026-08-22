@@ -12,6 +12,8 @@ import 'package:internet_connection_checker_plus/internet_connection_checker_plu
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/enum/enum.dart';
+import '../../../../core/services/session_service.dart';
+import '../../../../core/util/session_guard.dart';
 import '../../repo/sign_in_repo.dart';
 import '../../repo/credentials_store.dart';
 
@@ -21,9 +23,13 @@ part 'auth_state.dart';
 class AuthCubit extends Cubit<AuthState> {
   final SignInRepo _signInRepo;
   final CredentialsStore _credentialsStore;
+  final SessionService _sessionService;
 
   late final StreamSubscription<gotrue.AuthState> _authSubscription;
+  StreamSubscription<void>? _sessionExpiredSubscription;
   StreamSubscription<Map<String, dynamic>>? _profileSubscription;
+
+  bool _handlingSessionExpiry = false;
 
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
@@ -37,9 +43,13 @@ class AuthCubit extends Cubit<AuthState> {
     required SignInRepo signInRepo,
     required SupabaseClient client,
     required CredentialsStore credentialsStore,
+    required SessionService sessionService,
   }) : _signInRepo = signInRepo,
        _credentialsStore = credentialsStore,
+       _sessionService = sessionService,
        super(const AuthState.initial()) {
+    _sessionExpiredSubscription =
+        _sessionService.onExpired.listen((_) => handleSessionExpired());
     _listenToAuthChanges();
     // Load saved email/password for "Remember me"
     // ignore: unawaited_futures
@@ -204,6 +214,23 @@ class AuthCubit extends Cubit<AuthState> {
     // await _cleanupSubscriptions();
   }
 
+  Future<void> handleSessionExpired() async {
+    if (_handlingSessionExpiry) return;
+    _handlingSessionExpiry = true;
+
+    try {
+      try {
+        await _signInRepo.signOut();
+      } catch (_) {}
+
+      _emitError(LocaleKeys.session_expired.trnsltd);
+      await Future.delayed(const Duration(milliseconds: 50));
+      _handleNoSession();
+    } finally {
+      _handlingSessionExpiry = false;
+    }
+  }
+
   void _emitProfileStatus(Map<String, dynamic> profile) {
     final userStatus = (profile['status'] as String?).toAccountStatus();
     final userRole = (profile['role'] as String?).toUserRole();
@@ -233,19 +260,20 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   void _handleStreamError(dynamic e) {
-    if (e is AuthException) {
-      _handleNoSession();
+    if (SessionGuard.isAuthError(e)) {
+      handleSessionExpired();
     }
   }
 
   void _handleProfileError(dynamic e) {
-    if (e is AuthException) {
-      _handleNoSession();
+    if (SessionGuard.isAuthError(e)) {
+      handleSessionExpired();
     }
   }
 
   @override
   Future<void> close() async {
+    await _sessionExpiredSubscription?.cancel();
     await _authSubscription.cancel();
     await _profileSubscription?.cancel();
     return super.close();

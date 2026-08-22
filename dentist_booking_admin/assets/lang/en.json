@@ -297,6 +297,7 @@
     "password_cant_be_empty": "Password can't be empty",
     "invalid_email_or_password": "Invalid email or password",
     "failed_to_sign_in": "Failed to sign in",
+    "session_expired": "Your session has expired. Please sign in again.",
     "no_internet_connection": "No internet connection",
     "close_app_title": "Close App Confirmation",
     "close_app_confirm": "Are you sure you want to close the app?",

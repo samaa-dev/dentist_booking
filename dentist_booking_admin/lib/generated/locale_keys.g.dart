@@ -8,6 +8,8 @@ abstract class  LocaleKeys {
   static const login_email = 'login_email';
   static const login_password = 'login_password';
   static const login_button = 'login_button';
+  static const remember_me = 'remember_me';
+  static const clear_saved_credentials = 'clear_saved_credentials';
   static const logout_button = 'logout_button';
   static const login_footer = 'login_footer';
   static const footer_made = 'footer_made';
@@ -299,6 +301,7 @@ abstract class  LocaleKeys {
   static const password_cant_be_empty = 'password_cant_be_empty';
   static const invalid_email_or_password = 'invalid_email_or_password';
   static const failed_to_sign_in = 'failed_to_sign_in';
+  static const session_expired = 'session_expired';
   static const no_internet_connection = 'no_internet_connection';
   static const close_app_title = 'close_app_title';
   static const close_app_confirm = 'close_app_confirm';

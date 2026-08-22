@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../../../../core/app_setup.dart';
+import '../../../../core/services/session_service.dart';
 import '../../../../core/model/profile_model.dart';
 import '../../../../core/model/staff_model.dart';
 import '../../repo/staff_repo.dart';
@@ -27,6 +29,7 @@ class StaffCubit extends Cubit<StaffState> {
 
       emit(StaffState.loadedProfile(profileList));
     } catch (e) {
+      if (getIt<SessionService>().handleIfExpired(e)) return;
       debugPrint('Error loading profiles: $e');
       emit(StaffState.errorProfile(LocaleKeys.profile_error_load.trnsltd));
     }
@@ -42,6 +45,7 @@ class StaffCubit extends Cubit<StaffState> {
 
       emit(StaffState.loaded(staffList));
     } catch (e) {
+      if (getIt<SessionService>().handleIfExpired(e)) return;
       debugPrint('Error loading staff: $e');
       emit(StaffState.error(LocaleKeys.staff_error_load.trnsltd));
     }
@@ -56,6 +60,7 @@ class StaffCubit extends Cubit<StaffState> {
       final list = await _staffRepo.getAllStaff();
       emit(StaffState.loaded(list));
     } catch (e) {
+      if (getIt<SessionService>().handleIfExpired(e)) return;
       debugPrint('Create staff error: $e');
       emit(StaffState.errorAddStaff(LocaleKeys.staff_error_create.trnsltd));
     }
@@ -77,6 +82,7 @@ class StaffCubit extends Cubit<StaffState> {
 
       emit(StaffState.loaded(updatedList));
     } catch (e) {
+      if (getIt<SessionService>().handleIfExpired(e)) return;
       debugPrint('Error updating staff: $e');
       emit(StaffState.errorUpdateStaff(LocaleKeys.staff_error_update.trnsltd));
     }
@@ -96,6 +102,7 @@ class StaffCubit extends Cubit<StaffState> {
 
       emit(StaffState.loaded(updatedList));
     } catch (e) {
+      if (getIt<SessionService>().handleIfExpired(e)) return;
       debugPrint('Error deleting staff: $e');
       emit(StaffState.errorUpdateStaff(LocaleKeys.staff_error_delete.trnsltd));
     }
@@ -131,6 +138,7 @@ class StaffCubit extends Cubit<StaffState> {
         );
       }
     } catch (e) {
+      if (getIt<SessionService>().handleIfExpired(e)) return;
       debugPrint('Error changing password: $e');
       emit(
         StaffState.errorChangePasswordStaff(

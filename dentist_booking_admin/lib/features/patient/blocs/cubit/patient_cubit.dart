@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../../../../core/app_setup.dart';
+import '../../../../core/services/session_service.dart';
 import '../../../../core/model/profile_model.dart';
 import '../../../../generated/locale_keys.g.dart';
 import '../../repo/patient_repo.dart';
@@ -25,6 +27,7 @@ class PatientCubit extends Cubit<PatientState> {
 
       emit(PatientState.loaded(patientList));
     } catch (e) {
+      if (getIt<SessionService>().handleIfExpired(e)) return;
       debugPrint('Error loading patients: $e');
       emit(PatientState.error(LocaleKeys.error_loading_patients.trnsltd));
     }
@@ -45,6 +48,7 @@ class PatientCubit extends Cubit<PatientState> {
 
       emit(PatientState.loaded(updatedList));
     } catch (e) {
+      if (getIt<SessionService>().handleIfExpired(e)) return;
       debugPrint('Error updating patient: $e');
       emit(PatientState.error(LocaleKeys.patient_error_update.trnsltd));
     }

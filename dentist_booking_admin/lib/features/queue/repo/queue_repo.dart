@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/model/booking_model.dart';
 import '../../../core/model/queue_status_model.dart';
+import '../../../core/util/session_guard.dart';
 import '../../../generated/locale_keys.g.dart';
 
 class QueueRepo {
@@ -84,6 +85,8 @@ class QueueRepo {
 
       return BookingModel.fromJson(resp['data']);
     } catch (e) {
+      final sessionError = SessionGuard.asSessionExpired(e);
+      if (sessionError != null) throw sessionError;
       debugPrint("❌ Failed to update booking: $e");
       throw Exception('Failed to update booking: $e');
     }

@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../../core/app_setup.dart';
+import '../../../../core/services/session_service.dart';
 import '../../../../core/model/clinic_config_model.dart';
 import '../../../../core/model/clinic_settings_model.dart';
 import '../../../../core/model/working_hours_model.dart';
@@ -90,6 +91,7 @@ class SettingsCubit extends Cubit<SettingsState> {
 
       emit(SettingsState.loaded(config));
     } catch (e) {
+      if (getIt<SessionService>().handleIfExpired(e)) return;
       emit(SettingsState.error("Failed to load settings"));
     }
   }
@@ -290,6 +292,7 @@ class SettingsCubit extends Cubit<SettingsState> {
 
       emit(SettingsState.successUpdateSetting(updatedModel));
     } catch (e) {
+      if (getIt<SessionService>().handleIfExpired(e)) return;
       showResetButton = true;
       final details = e.toString().replaceFirst('Exception: ', '').trim();
       final message = details.isEmpty
@@ -476,6 +479,7 @@ class SettingsCubit extends Cubit<SettingsState> {
     try {
       getIt<TicketPrintService>().ticketNote = ticketNoteTMP;
     } catch (e) {
+      if (getIt<SessionService>().handleIfExpired(e)) return;
       debugPrint('SettingsCubit: could not sync ticketNote to print service: $e');
     }
   }

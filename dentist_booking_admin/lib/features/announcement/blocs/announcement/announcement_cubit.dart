@@ -7,6 +7,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/app_setup.dart';
+import '../../../../core/services/session_service.dart';
 import '../../../../generated/locale_keys.g.dart';
 import '../../repo/announcement_repo.dart';
 
@@ -33,6 +35,7 @@ class AnnouncementCubit extends Cubit<AnnouncementState> {
 
       emit(AnnouncementState.loaded(announcementList));
     } catch (e) {
+      if (getIt<SessionService>().handleIfExpired(e)) return;
       debugPrint('Error loading announcement: $e');
       emit(AnnouncementState.error(LocaleKeys.announcement_error_load.trnsltd));
     }
@@ -67,6 +70,7 @@ class AnnouncementCubit extends Cubit<AnnouncementState> {
       emit(AnnouncementState.successAddAnnouncement(created));
       emit(AnnouncementState.loaded(list));
     } catch (e) {
+      if (getIt<SessionService>().handleIfExpired(e)) return;
       emit(
         AnnouncementState.errorAddAnnouncement(
           LocaleKeys.announcement_error_create.trnsltd,
@@ -110,6 +114,7 @@ class AnnouncementCubit extends Cubit<AnnouncementState> {
       emit(AnnouncementState.successUpdateAnnouncement(updated));
       emit(AnnouncementState.loaded(list));
     } catch (e) {
+      if (getIt<SessionService>().handleIfExpired(e)) return;
       emit(
         AnnouncementState.errorUpdateAnnouncement(
           LocaleKeys.announcement_error_update.trnsltd,
@@ -128,6 +133,7 @@ class AnnouncementCubit extends Cubit<AnnouncementState> {
       emit(AnnouncementState.loaded(list));
       emit(AnnouncementState.successDeleteAnnouncement(null));
     } catch (e) {
+      if (getIt<SessionService>().handleIfExpired(e)) return;
       emit(
         AnnouncementState.errorDeleteAnnouncement(
           LocaleKeys.announcement_error_delete.trnsltd,

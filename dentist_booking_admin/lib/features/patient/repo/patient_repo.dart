@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/model/profile_model.dart';
+import '../../../core/util/session_guard.dart';
 
 class PatientRepo {
   final SupabaseClient _client;
@@ -20,6 +21,8 @@ class PatientRepo {
           .map<ProfileModel>((e) => ProfileModel.fromJson(e))
           .toList();
     } catch (e) {
+      final sessionError = SessionGuard.asSessionExpired(e);
+      if (sessionError != null) throw sessionError;
       debugPrint("Failed to fetch patient list: $e");
       throw Exception('Failed to fetch patient list: $e');
     }
@@ -42,6 +45,8 @@ class PatientRepo {
 
       return ProfileModel.fromJson(resp);
     } catch (e) {
+      final sessionError = SessionGuard.asSessionExpired(e);
+      if (sessionError != null) throw sessionError;
       throw Exception('Failed to update patient: $e');
     }
   }

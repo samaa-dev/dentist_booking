@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/model/clinic_config_model.dart';
+import '../../../core/util/session_guard.dart';
 
 class SettingsRepo {
   final SupabaseClient _client;
@@ -18,6 +19,8 @@ class SettingsRepo {
 
       return ClinicConfigModel.fromJson(response);
     } catch (e) {
+      final sessionError = SessionGuard.asSessionExpired(e);
+      if (sessionError != null) throw sessionError;
       debugPrint("Failed to fetch Settings list: $e");
       throw Exception('Failed to fetch Settings list: $e');
     }
@@ -33,6 +36,8 @@ class SettingsRepo {
         },
       );
     } catch (e, stackTrace) {
+      final sessionError = SessionGuard.asSessionExpired(e);
+      if (sessionError != null) throw sessionError;
       debugPrint("Failed to update Settings: $e");
       debugPrint("Stack trace: $stackTrace");
       final message = e.toString().replaceFirst('Exception: ', '').trim();

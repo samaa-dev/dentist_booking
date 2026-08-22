@@ -7,6 +7,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/app_setup.dart';
+import '../../../../core/services/session_service.dart';
 import '../../../../core/model/booking_model.dart';
 import '../../../../core/model/profile_model.dart';
 import '../../../../generated/locale_keys.g.dart';
@@ -56,6 +58,7 @@ class BookingCubit extends Cubit<BookingState> {
 
       emit(BookingState.loaded(bookingList));
     } catch (e) {
+      if (getIt<SessionService>().handleIfExpired(e)) return;
       debugPrint('Error loading patients: $e');
       emit(BookingState.error(LocaleKeys.error_loading_bookings.trnsltd));
     }
@@ -80,6 +83,7 @@ class BookingCubit extends Cubit<BookingState> {
 
       emit(BookingState.loaded(bookingList));
     } catch (e) {
+      if (getIt<SessionService>().handleIfExpired(e)) return;
       debugPrint('Error loading bookings: $e');
       emit(BookingState.error(LocaleKeys.error_loading_bookings.trnsltd));
     }
@@ -92,6 +96,7 @@ class BookingCubit extends Cubit<BookingState> {
 
       emit(BookingState.loadedPatients(patientList));
     } catch (e) {
+      if (getIt<SessionService>().handleIfExpired(e)) return;
       debugPrint('Error loading patients: $e');
       emit(
         BookingState.errorPatients(
@@ -121,6 +126,7 @@ class BookingCubit extends Cubit<BookingState> {
       emit(BookingState.successUpdateBooking(created));
       emit(BookingState.loaded(list));
     } catch (e) {
+      if (getIt<SessionService>().handleIfExpired(e)) return;
       debugPrint("Update booking error: $e");
       emit(
         BookingState.errorUpdateBooking(
@@ -175,6 +181,7 @@ class BookingCubit extends Cubit<BookingState> {
       // 🔥 6) إعادة تحميل القائمة
       emit(BookingState.loaded(list));
     } catch (e) {
+      if (getIt<SessionService>().handleIfExpired(e)) return;
       debugPrint("Create booking error: $e");
       emit(
         BookingState.errorAddBooking(
@@ -197,6 +204,7 @@ class BookingCubit extends Cubit<BookingState> {
       emit(BookingState.successDeleteBooking(null));
       emit(BookingState.loaded(list));
     } catch (e) {
+      if (getIt<SessionService>().handleIfExpired(e)) return;
       debugPrint('Error deleting booking: $e');
       emit(
         BookingState.errorDeleteBooking(
