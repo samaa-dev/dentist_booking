@@ -23,6 +23,8 @@ class BookingCubit extends Cubit<BookingState> {
 
   StreamSubscription<List<Map<String, dynamic>>>? _bookingsSub;
 
+  List<BookingModel> _lastBookings = const [];
+
   BookingCubit({
     required BookingRepo bookingRepo,
     required SupabaseClient client,
@@ -47,8 +49,21 @@ class BookingCubit extends Cubit<BookingState> {
         status: null,
       );
 
+      _rememberBookings(bookingList);
       emit(BookingState.loaded(bookingList));
     });
+  }
+
+  void _rememberBookings(List<BookingModel> bookings) {
+    _lastBookings = bookings;
+  }
+
+  bool _handleSessionExpiry(Object error) {
+    if (!getIt<SessionService>().handleIfExpired(error)) return false;
+    if (_lastBookings.isNotEmpty) {
+      emit(BookingState.loaded(_lastBookings));
+    }
+    return true;
   }
 
   Future<void> getAllBookings() async {
@@ -56,6 +71,7 @@ class BookingCubit extends Cubit<BookingState> {
     try {
       final bookingList = await _bookingRepo.getAllBookings();
 
+      _rememberBookings(bookingList);
       emit(BookingState.loaded(bookingList));
     } catch (e) {
       if (getIt<SessionService>().handleIfExpired(e)) return;
@@ -81,6 +97,7 @@ class BookingCubit extends Cubit<BookingState> {
         searchQuery: searchQuery,
       );
 
+      _rememberBookings(bookingList);
       emit(BookingState.loaded(bookingList));
     } catch (e) {
       if (getIt<SessionService>().handleIfExpired(e)) return;
@@ -124,9 +141,10 @@ class BookingCubit extends Cubit<BookingState> {
       final list = await _bookingRepo.getAllBookings();
 
       emit(BookingState.successUpdateBooking(created));
+      _rememberBookings(list);
       emit(BookingState.loaded(list));
     } catch (e) {
-      if (getIt<SessionService>().handleIfExpired(e)) return;
+      if (_handleSessionExpiry(e)) return;
       debugPrint("Update booking error: $e");
       emit(
         BookingState.errorUpdateBooking(
@@ -178,10 +196,10 @@ class BookingCubit extends Cubit<BookingState> {
       // 🔥 5) إرسال الحدث بنجاح
       emit(BookingState.successAddBooking(finalCreated));
 
-      // 🔥 6) إعادة تحميل القائمة
+      _rememberBookings(list);
       emit(BookingState.loaded(list));
     } catch (e) {
-      if (getIt<SessionService>().handleIfExpired(e)) return;
+      if (_handleSessionExpiry(e)) return;
       debugPrint("Create booking error: $e");
       emit(
         BookingState.errorAddBooking(
@@ -202,9 +220,10 @@ class BookingCubit extends Cubit<BookingState> {
       final list = await _bookingRepo.getAllBookings();
 
       emit(BookingState.successDeleteBooking(null));
+      _rememberBookings(list);
       emit(BookingState.loaded(list));
     } catch (e) {
-      if (getIt<SessionService>().handleIfExpired(e)) return;
+      if (_handleSessionExpiry(e)) return;
       debugPrint('Error deleting booking: $e');
       emit(
         BookingState.errorDeleteBooking(

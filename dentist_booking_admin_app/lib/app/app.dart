@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../core/app_setup.dart';
 import '../core/blocs/theme/theme_cubit.dart';
 import '../core/l10n/dz_material_localizations.dart';
+import '../core/navigation/app_navigator.dart';
 import '../core/version/app_version_utils.dart';
 import '../core/version/version_gate.dart';
 import '../features/auth/auth.dart';
@@ -20,6 +21,7 @@ class DentistBookingAdminApp extends StatelessWidget {
       child: BlocBuilder<ThemeCubit, ThemeState>(
         builder: (context, state) {
           return MaterialApp(
+            navigatorKey: rootNavigatorKey,
             title: 'Clinic El-Wafa Admin',
             debugShowCheckedModeBanner: false,
             localizationsDelegates: [

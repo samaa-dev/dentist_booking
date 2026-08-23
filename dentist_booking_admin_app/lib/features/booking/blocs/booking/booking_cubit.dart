@@ -137,7 +137,7 @@ class BookingCubit extends Cubit<BookingState> {
       // Refresh list with current filters (realtime may also fire).
       await getBookingsWithFilters();
     } catch (e) {
-      if (getIt<SessionService>().handleIfExpired(e)) return;
+      if (_handleSessionExpiry(e)) return;
       debugPrint('Create booking error: $e');
       emit(
         BookingState.errorAddBooking(
@@ -170,7 +170,7 @@ class BookingCubit extends Cubit<BookingState> {
       emit(BookingState.successUpdateBooking(updated));
       await getBookingsWithFilters();
     } catch (e) {
-      if (getIt<SessionService>().handleIfExpired(e)) return;
+      if (_handleSessionExpiry(e)) return;
       debugPrint('Update booking error: $e');
       emit(
         BookingState.errorUpdateBooking(
@@ -222,6 +222,14 @@ class BookingCubit extends Cubit<BookingState> {
     _searchQuery = '';
     _applyDateScope(BookingDateScope.today);
     getBookingsWithFilters();
+  }
+
+  bool _handleSessionExpiry(Object error) {
+    if (!getIt<SessionService>().handleIfExpired(error)) return false;
+    if (_lastBookings.isNotEmpty) {
+      emit(BookingState.loaded(_lastBookings));
+    }
+    return true;
   }
 
   @override

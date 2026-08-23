@@ -12,6 +12,7 @@ import 'package:internet_connection_checker_plus/internet_connection_checker_plu
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/enum/enum.dart';
+import '../../../../core/navigation/app_navigator.dart';
 import '../../../../core/services/session_service.dart';
 import '../../../../core/util/session_guard.dart';
 import '../../repo/sign_in_repo.dart';
@@ -219,6 +220,8 @@ class AuthCubit extends Cubit<AuthState> {
     _handlingSessionExpiry = true;
 
     try {
+      AppNavigator.dismissOverlays();
+
       try {
         await _signInRepo.signOut();
       } catch (_) {}

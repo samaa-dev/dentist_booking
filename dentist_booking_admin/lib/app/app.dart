@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../core/blocs/theme/theme_cubit.dart';
 import '../core/l10n/dz_material_localizations.dart';
+import '../core/navigation/app_navigator.dart';
 import '../core/routes/app_route.dart';
 import '../core/version/app_version_utils.dart';
 import '../core/version/version_gate.dart';
@@ -24,6 +25,7 @@ class DentistBookingAdmin extends StatelessWidget {
       child: BlocBuilder<ThemeCubit, ThemeState>(
         builder: (context, state) {
           return MaterialApp(
+            navigatorKey: rootNavigatorKey,
             title: 'Dentist Booking Admin',
             debugShowCheckedModeBanner: false,
             onGenerateRoute: _appRouter.generateRoute,
