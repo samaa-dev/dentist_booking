@@ -1,3 +1,4 @@
+import 'package:dentist_booking_app/core/enum/enum.dart';
 import 'package:dentist_booking_app/core/model/booking_model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -31,6 +32,22 @@ class BookingCreateCubit extends Cubit<BookingCreateState> {
     } catch (e) {
       debugPrint("Failed to check if can book for self: $e");
       return false;
+    }
+  }
+
+  /// Returns people-ahead count for today+[shift], or null on failure.
+  /// Does not emit loading (avoids opening create LoadingDialog early).
+  Future<int?> previewPeopleAhead(BookingShift shift) async {
+    try {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      return await _bookingCreateRepo.getPeopleAheadForShift(
+        date: today,
+        shift: shift,
+      );
+    } catch (e) {
+      debugPrint("Failed to preview people ahead: $e");
+      return null;
     }
   }
 

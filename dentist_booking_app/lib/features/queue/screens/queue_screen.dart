@@ -1,3 +1,4 @@
+import 'package:dentist_booking_app/core/blocs/pages/pages_cubit.dart';
 import 'package:dentist_booking_app/core/extensions/os_extensions.dart';
 import 'package:dentist_booking_app/core/widgets/appbar/custom_app_bar.dart';
 import 'package:dentist_booking_app/features/queue/blocs/queue/queue_cubit.dart';
@@ -21,48 +22,98 @@ class QueueScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider<QueueCubit>(
       create: (context) => getIt<QueueCubit>(),
-      child: BlocListener<QueueCubit, QueueState>(
-        listenWhen: (previous, current) {
-          return current.maybeWhen(
-            orElse: () => false,
-            loading: () => true,
-            loaded: (_) => true,
-            error: (_) => true,
-          );
-        },
-        listener: (context, state) {
-          state.maybeWhen(
-            orElse: () => {},
+      child: const _QueueScreenBody(),
+    );
+  }
+}
 
-            loading: () => showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (_) => LoadingDialog(),
-            ),
-            error: (message) {
-              if (Navigator.canPop(context)) Navigator.pop(context);
-              SnackbarMes.showToastMsg(context, message: message);
-            },
-            loaded: (queue) {
-              if (Navigator.canPop(context)) Navigator.pop(context);
+class _QueueScreenBody extends StatefulWidget {
+  const _QueueScreenBody();
 
-              if (queue == null) {
-                SnackbarMes.showToastMsg(
-                  context,
-                  message: LocaleKeys.error_no_queue_found.trnsltd,
-                );
-                return;
-              }
+  @override
+  State<_QueueScreenBody> createState() => _QueueScreenBodyState();
+}
 
-              showDialog(
+class _QueueScreenBodyState extends State<_QueueScreenBody> {
+  String? _lastHandledTicket;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _trackFromPagesState(context.read<PagesCubit>().state);
+    });
+  }
+
+  void _trackFromPagesState(PagesState state) {
+    final ticket = state.maybeWhen(
+      changed: (_, data) => data?['ticket_code'] as String?,
+      orElse: () => null,
+    );
+    final code = ticket?.trim();
+    if (code == null || code.isEmpty) return;
+    if (_lastHandledTicket == code) return;
+    _lastHandledTicket = code;
+    context.read<QueueCubit>().getQueue(ticketCode: code);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<QueueCubit, QueueState>(
+          listenWhen: (previous, current) {
+            return current.maybeWhen(
+              orElse: () => false,
+              loading: () => true,
+              loaded: (_) => true,
+              error: (_) => true,
+            );
+          },
+          listener: (context, state) {
+            state.maybeWhen(
+              orElse: () => {},
+              loading: () => showDialog(
                 context: context,
-                builder: (_) => QueueDetails(queue: queue),
-              );
-            },
-          );
-        },
-        child: const _QueueLayout(),
-      ),
+                barrierDismissible: false,
+                builder: (_) => LoadingDialog(),
+              ),
+              error: (message) {
+                if (Navigator.canPop(context)) Navigator.pop(context);
+                SnackbarMes.showToastMsg(context, message: message);
+              },
+              loaded: (queue) {
+                if (Navigator.canPop(context)) Navigator.pop(context);
+
+                if (queue == null) {
+                  SnackbarMes.showToastMsg(
+                    context,
+                    message: LocaleKeys.error_no_queue_found.trnsltd,
+                  );
+                  return;
+                }
+
+                showDialog(
+                  context: context,
+                  builder: (_) => QueueDetails(queue: queue),
+                );
+              },
+            );
+          },
+        ),
+        BlocListener<PagesCubit, PagesState>(
+          listenWhen: (previous, current) {
+            final ticket = current.maybeWhen(
+              changed: (_, data) => data?['ticket_code'] as String?,
+              orElse: () => null,
+            );
+            return ticket != null && ticket.trim().isNotEmpty;
+          },
+          listener: (context, state) => _trackFromPagesState(state),
+        ),
+      ],
+      child: const _QueueLayout(),
     );
   }
 }

@@ -14,6 +14,7 @@ import '../../../core/enum/enum.dart';
 import '../../../core/model/booking_status_model.dart';
 import '../../../core/model/tracking_model.dart';
 import '../../../core/util/queue_turn_display.dart';
+import '../../queue/widget/queue_ticket_card.dart';
 import '../blocs/booking_status/booking_status_cubit.dart';
 import 'active_bookings_list.dart';
 import 'booking_status_panel_states.dart';
@@ -147,7 +148,14 @@ class _BookingStatusPanelLayout extends StatelessWidget {
     } else if (eveningFull && !hasBookableShift) {
       stoppedSubtitle = LocaleKeys.evening_full.trnsltd;
     } else {
-      stoppedSubtitle = LocaleKeys.booking_closed_now.trnsltd;
+      final openAt = status.bookingMorningStartTime?.trim();
+      if (openAt != null && openAt.isNotEmpty) {
+        stoppedSubtitle = LocaleKeys.booking_closed_opens_morning.tr(
+          namedArgs: {'time': openAt},
+        );
+      } else {
+        stoppedSubtitle = LocaleKeys.booking_closed_now.trnsltd;
+      }
     }
 
     return TweenAnimationBuilder<double>(
@@ -573,52 +581,20 @@ class _ActiveBookingPanel extends StatelessWidget {
           },
         ),
         const SizedBox(height: 16),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final stackVertically = constraints.maxWidth < 340;
-            final currentBlock = _statBlock(
-              context,
-              icon: Icons.play_arrow_rounded,
-              value: QueueTurnDisplay.currentQueueValue(
-                queue.queueStats,
-                shift: queue.booking.shift,
-              ),
-              label: LocaleKeys.current_number.trnsltd,
-              color: colorScheme.primary,
-            );
-            final beforeBlock = _statBlock(
-              context,
-              icon: isCalled
-                  ? Icons.check_circle_rounded
-                  : Icons.people_rounded,
-              value: QueueTurnDisplay.beforeYouValue(
-                kind: turnKind,
-                stats: queue.queueStats,
-              ),
-              label: QueueTurnDisplay.beforeYouLabel(
-                kind: turnKind,
-                stats: queue.queueStats,
-              ),
-              color: isHighlight ? Colors.green : colorScheme.secondary,
-            );
-
-            if (stackVertically) {
-              return Column(
-                children: [
-                  currentBlock,
-                  const SizedBox(height: 16),
-                  beforeBlock,
-                ],
-              );
-            }
-
-            return Row(
-              children: [
-                Expanded(child: currentBlock),
-                Expanded(child: beforeBlock),
-              ],
-            );
-          },
+        QueueTicketCard(
+          queueNumber: queue.booking.queueNumber,
+          ticketCode: queue.booking.ticketCode,
+          turnKind: turnKind,
+          showChrome: false,
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        ),
+        const SizedBox(height: 12),
+        _compactQueueStatsRow(
+          context,
+          queue: queue,
+          turnKind: turnKind,
+          isHighlight: isHighlight,
+          isCalled: isCalled,
         ),
         if (canCancel && queue.booking.id != null) ...[
           const SizedBox(height: 16),
@@ -626,7 +602,7 @@ class _ActiveBookingPanel extends StatelessWidget {
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: () {
-                showCancelBookingReasonSheet(
+                showCancelBookingConfirmDialog(
                   context,
                   bookingId: queue.booking.id!,
                   onSuccess: () =>
@@ -648,7 +624,59 @@ class _ActiveBookingPanel extends StatelessWidget {
     );
   }
 
-  Widget _statBlock(
+  Widget _compactQueueStatsRow(
+    BuildContext context, {
+    required TrackingModel queue,
+    required QueueTurnKind turnKind,
+    required bool isHighlight,
+    required bool isCalled,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final beforeLabel = QueueTurnDisplay.beforeYouLabel(
+      kind: turnKind,
+      stats: queue.queueStats,
+    );
+    final beforeColor = isHighlight ? Colors.green : colorScheme.secondary;
+
+    return Row(
+      children: [
+        Expanded(
+          child: _compactStatChip(
+            context,
+            icon: Icons.play_arrow_rounded,
+            value: QueueTurnDisplay.currentQueueValue(
+              queue.queueStats,
+              shift: queue.booking.shift,
+            ),
+            label: LocaleKeys.current_number.trnsltd,
+            color: colorScheme.primary,
+          ),
+        ),
+        Container(
+          width: 1,
+          height: 36,
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          color: colorScheme.outlineVariant.withOpacity(0.5),
+        ),
+        Expanded(
+          child: _compactStatChip(
+            context,
+            icon: isCalled
+                ? Icons.check_circle_rounded
+                : Icons.people_rounded,
+            value: QueueTurnDisplay.beforeYouValue(
+              kind: turnKind,
+              stats: queue.queueStats,
+            ),
+            label: beforeLabel,
+            color: beforeColor,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _compactStatChip(
     BuildContext context, {
     required IconData icon,
     required String value,
@@ -658,30 +686,29 @@ class _ActiveBookingPanel extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
 
-    return SizedBox(
-      width: double.infinity,
-      child: Column(
-        children: [
-          Container(
-            height: 60,
-            width: 60,
-            decoration: BoxDecoration(
-              color: color.withOpacity(.15),
-              shape: BoxShape.circle,
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18, color: color),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                value,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
             ),
-            child: Icon(icon, color: color),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            textAlign: TextAlign.center,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
+          ],
+        ),
+        const SizedBox(height: 2),
+        if (label.isNotEmpty)
           Text(
             label,
             textAlign: TextAlign.center,
@@ -689,11 +716,10 @@ class _ActiveBookingPanel extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: textTheme.bodySmall?.copyWith(
               color: colorScheme.onSurfaceVariant,
+              fontSize: 11,
             ),
           ),
-        ],
-      ),
+      ],
     );
   }
-
 }

@@ -1,0 +1,6 @@
+# Supabase CLI config for dentist_booking (functions + local link)
+
+project_id = "agyqdghxqylwinpcvvmn"
+
+[functions.send-push]
+verify_jwt = false

@@ -6,7 +6,7 @@ part 'booking_status_model.freezed.dart';
 part 'booking_status_model.g.dart';
 
 @freezed
-class BookingStatusModel with _$BookingStatusModel {
+abstract class BookingStatusModel with _$BookingStatusModel {
   const BookingStatusModel._();
 
   const factory BookingStatusModel({
@@ -23,6 +23,8 @@ class BookingStatusModel with _$BookingStatusModel {
     @JsonKey(name: 'evening_full') bool? eveningFull,
     @JsonKey(name: 'morning_available') bool? morningAvailable,
     @JsonKey(name: 'evening_available') bool? eveningAvailable,
+    /// Clinic morning booking open time as HH:MM (from get_booking_status).
+    @JsonKey(name: 'booking_morning_start_time') String? bookingMorningStartTime,
   }) = _$BookingStatusModelImpl;
 
   factory BookingStatusModel.fromJson(Map<String, dynamic> json) =>

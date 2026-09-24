@@ -76,7 +76,23 @@ class SignInRepo {
         .from('profiles')
         .stream(primaryKey: ['user_id'])
         .eq('user_id', userId)
-        .map((rows) => rows.isNotEmpty ? rows.first : {});
+        .map((rows) => rows.isNotEmpty ? Map<String, dynamic>.from(rows.first) : <String, dynamic>{});
+  }
+
+  /// One-shot profile load (does not depend on Realtime).
+  Future<Map<String, dynamic>?> fetchProfileOnce(String userId) async {
+    try {
+      final row = await _supabase
+          .from('profiles')
+          .select()
+          .eq('user_id', userId)
+          .maybeSingle();
+      if (row == null) return null;
+      return Map<String, dynamic>.from(row);
+    } catch (e, st) {
+      debugPrint('fetchProfileOnce failed: $e\n$st');
+      rethrow;
+    }
   }
 
   Future<bool> updateProfile(Map<String, dynamic> data) async {
@@ -122,13 +138,18 @@ class SignInRepo {
     }
   }
 
+  /// Best-effort last_seen update; never throws to callers.
   Future<void> updateLastSeen(String userId) async {
-    await _supabase
-        .from('profiles')
-        .update({
-          'last_seen': DateTime.now().toUtc().toIso8601String(),
-          'updated_at': DateTime.now().toUtc().toIso8601String(),
-        })
-        .eq('user_id', userId);
+    try {
+      await _supabase
+          .from('profiles')
+          .update({
+            'last_seen': DateTime.now().toUtc().toIso8601String(),
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('user_id', userId);
+    } catch (e, st) {
+      debugPrint('updateLastSeen failed (non-fatal): $e\n$st');
+    }
   }
 }

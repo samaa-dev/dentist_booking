@@ -3,6 +3,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/enum/enum.dart';
 import '../../../core/model/booking_model.dart';
 import '../../../generated/locale_keys.g.dart';
 
@@ -12,6 +13,27 @@ class BookingCreateRepo {
   BookingCreateRepo({
     required SupabaseClient client,
   }) : _client = client;
+
+  /// Count of pending/confirmed bookings for [date]+[shift] (people ahead if booking now).
+  Future<int> getPeopleAheadForShift({
+    required DateTime date,
+    required BookingShift shift,
+  }) async {
+    final dateStr = date.toIso8601String().split('T').first;
+    final resp = await _client.rpc(
+      'get_people_ahead_for_shift',
+      params: {
+        'p_date': dateStr,
+        'p_shift': shift.code,
+      },
+    );
+
+    if (resp is int) return resp;
+    if (resp is num) return resp.toInt();
+    if (resp is String) return int.tryParse(resp) ?? 0;
+
+    throw Exception('Unexpected people-ahead response: $resp');
+  }
 
   Future<BookingModel> createBooking(BookingModel model) async {
     debugPrint("SENDING TIMESTAMP -> ${model.bookingDate.toIso8601String()}");

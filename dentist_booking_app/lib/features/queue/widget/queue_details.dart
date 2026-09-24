@@ -6,6 +6,7 @@ import '../../../core/enum/enum.dart';
 import '../../../core/model/tracking_model.dart';
 import '../../../core/util/queue_turn_display.dart';
 import '../../../generated/locale_keys.g.dart';
+import 'queue_ticket_card.dart';
 
 class QueueDetails extends StatelessWidget {
   const QueueDetails({super.key, required this.queue});
@@ -54,7 +55,12 @@ class QueueDetails extends StatelessWidget {
                   offset: Offset(0, (1 - value) * 20),
                   child: Opacity(opacity: value, child: child),
                 ),
-                child: _buildTicketCard(context, turnKind),
+                child: QueueTicketCard(
+                  queueNumber: queue.booking.queueNumber,
+                  ticketCode: queue.booking.ticketCode,
+                  turnKind: turnKind,
+                  margin: const EdgeInsets.symmetric(horizontal: 18),
+                ),
               ),
               TweenAnimationBuilder<double>(
                 duration: const Duration(milliseconds: 350),
@@ -108,64 +114,6 @@ class QueueDetails extends StatelessWidget {
               color: colorScheme.onSurfaceVariant,
             ),
             onPressed: () => Navigator.of(context).pop(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// TICKET CARD
-  Widget _buildTicketCard(BuildContext context, QueueTurnKind turnKind) {
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
-    final badgeText = QueueTurnDisplay.ticketBadgeText(turnKind);
-
-    return _card(
-      context,
-      margin: const EdgeInsets.symmetric(horizontal: 18),
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-      child: Column(
-        children: [
-          if (badgeText != null)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-              decoration: BoxDecoration(
-                color: colorScheme.secondary,
-                borderRadius: BorderRadius.circular(50),
-              ),
-              child: Text(
-                badgeText,
-                style: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSecondary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          const SizedBox(height: 20),
-
-          Text(
-            "#${queue.booking.queueNumber?.padLeft(4, '0')}",
-            style: textTheme.displaySmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: colorScheme.primary,
-              letterSpacing: 2,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            LocaleKeys.queue_number.trnsltd,
-            style: textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 26),
-
-          _smallInfoBox(
-            context,
-            icon: Icons.list_alt_rounded,
-            title: LocaleKeys.ticket_number.trnsltd,
-            iconColor: colorScheme.secondary,
-            value: queue.booking.ticketCode ?? '',
           ),
         ],
       ),
@@ -384,65 +332,6 @@ class QueueDetails extends StatelessWidget {
         ),
       ),
       child: child,
-    );
-  }
-
-  Widget _smallInfoBox(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String value,
-    Color? iconColor,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(22),
-        gradient: LinearGradient(
-          colors: [
-            colorScheme.surface,
-            colorScheme.surface.withOpacity(0.96),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        border: Border.all(
-          color: colorScheme.primary.withOpacity(0.4),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: iconColor ?? colorScheme.primary),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  value,
-                  style: textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: iconColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 

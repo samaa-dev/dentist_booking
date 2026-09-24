@@ -255,7 +255,7 @@ class BookingItem extends StatelessWidget {
                   ),
                   onTap: () {
                     Navigator.pop(context);
-                    showCancelBookingReasonSheet(
+                    showCancelBookingConfirmDialog(
                       context,
                       bookingId: booking.id!,
                       onSuccess: () =>

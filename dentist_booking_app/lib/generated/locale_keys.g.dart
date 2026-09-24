@@ -22,6 +22,7 @@ abstract class  LocaleKeys {
   static const staff = 'staff';
   static const patient = 'patient';
   static const failed_to_update_user_status = 'failed_to_update_user_status';
+  static const profile_not_found = 'profile_not_found';
   static const no_internet_connection = 'no_internet_connection';
   static const failed_to_sign_in = 'failed_to_sign_in';
   static const footer_made = 'footer_made';
@@ -144,6 +145,9 @@ abstract class  LocaleKeys {
   static const reason_enter_details = 'reason_enter_details';
   static const booking_cancel_confirm_btn = 'booking_cancel_confirm_btn';
   static const booking_cancel_action = 'booking_cancel_action';
+  static const booking_cancel_confirm_title = 'booking_cancel_confirm_title';
+  static const booking_cancel_confirm_message = 'booking_cancel_confirm_message';
+  static const booking_cancel_go_back = 'booking_cancel_go_back';
   static const booking_cannot_cancel = 'booking_cannot_cancel';
   static const booking_cancel_success = 'booking_cancel_success';
   static const CANCEL_SUCCESS = 'CANCEL_SUCCESS';
@@ -157,6 +161,7 @@ abstract class  LocaleKeys {
   static const wait_time_second = 'wait_time.second';
   static const wait_time = 'wait_time';
   static const booking_closed_now = 'booking_closed_now';
+  static const booking_closed_opens_morning = 'booking_closed_opens_morning';
   static const morning_shift_closed_today = 'morning_shift_closed_today';
   static const evening_shift_closed_today = 'evening_shift_closed_today';
   static const shift_closed_today = 'shift_closed_today';
@@ -210,6 +215,7 @@ abstract class  LocaleKeys {
   static const error_no_queue_found_desc = 'error_no_queue_found_desc';
   static const queue_details = 'queue_details';
   static const queue_number = 'queue_number';
+  static const your_booking_number = 'your_booking_number';
   static const patient_information = 'patient_information';
   static const patient_name = 'patient_name';
   static const phone_number = 'phone_number';
@@ -242,6 +248,10 @@ abstract class  LocaleKeys {
   static const you_are_current_turn = 'you_are_current_turn';
   static const you_already_called = 'you_already_called';
   static const people_before_you = 'people_before_you';
+  static const confirm_booking_title = 'confirm_booking_title';
+  static const booking_ahead_confirm_message = 'booking_ahead_confirm_message';
+  static const booking_ahead_first_message = 'booking_ahead_first_message';
+  static const confirm_booking_button = 'confirm_booking_button';
   static const update_required_title = 'update_required_title';
   static const update_required_body = 'update_required_body';
   static const update_required_current = 'update_required_current';

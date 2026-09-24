@@ -16,6 +16,7 @@ import '../features/home/repo/booking_create_repo.dart';
 import '../features/home/repo/clinic_settings_repo.dart';
 import 'blocs/pages/pages_cubit.dart';
 import 'blocs/theme/theme_cubit.dart';
+import 'services/push_notification_service.dart';
 
 final getIt = GetIt.I;
 
@@ -25,12 +26,16 @@ Future<void> setUp() async {
   getIt.registerLazySingleton<SupabaseClient>(() => client);
   getIt.registerFactory(() => ThemeCubit());
 
+  final pushService = PushNotificationService(client: client);
+  getIt.registerLazySingleton<PushNotificationService>(() => pushService);
+
   final signInRepo = SignInRepo(supabase: client);
   getIt.registerLazySingleton<SignInRepo>(() => signInRepo);
   getIt.registerFactory(
     () => AuthCubit(
       signInRepo: signInRepo,
       client: client,
+      pushNotificationService: pushService,
     ),
   );
 

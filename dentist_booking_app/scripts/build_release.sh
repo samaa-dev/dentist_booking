@@ -69,7 +69,7 @@ echo "  dart-defines: URL_SUPABASE, SUPABASE_KEY"
 echo ""
 
 flutter pub get
-dart run build_runner build --delete-conflicting-outputs
+dart run build_runner build
 flutter build apk --release "${DART_DEFINES[@]}"
 flutter build appbundle --release "${DART_DEFINES[@]}"
 

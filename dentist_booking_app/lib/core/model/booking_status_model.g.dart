@@ -6,9 +6,9 @@ part of 'booking_status_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$$BookingStatusModelImplImpl _$$$BookingStatusModelImplImplFromJson(
+_$BookingStatusModelImpl _$$BookingStatusModelImplFromJson(
   Map<String, dynamic> json,
-) => _$$BookingStatusModelImplImpl(
+) => _$BookingStatusModelImpl(
   isOpen: json['is_open'] as bool?,
   shift: $enumDecodeNullable(_$BookingShiftEnumMap, json['shift']),
   timeLeft: (json['time_left'] as num?)?.toInt(),
@@ -20,10 +20,11 @@ _$$BookingStatusModelImplImpl _$$$BookingStatusModelImplImplFromJson(
   eveningFull: json['evening_full'] as bool?,
   morningAvailable: json['morning_available'] as bool?,
   eveningAvailable: json['evening_available'] as bool?,
+  bookingMorningStartTime: json['booking_morning_start_time'] as String?,
 );
 
-Map<String, dynamic> _$$$BookingStatusModelImplImplToJson(
-  _$$BookingStatusModelImplImpl instance,
+Map<String, dynamic> _$$BookingStatusModelImplToJson(
+  _$BookingStatusModelImpl instance,
 ) => <String, dynamic>{
   'is_open': instance.isOpen,
   'shift': _$BookingShiftEnumMap[instance.shift],
@@ -36,6 +37,7 @@ Map<String, dynamic> _$$$BookingStatusModelImplImplToJson(
   'evening_full': instance.eveningFull,
   'morning_available': instance.morningAvailable,
   'evening_available': instance.eveningAvailable,
+  'booking_morning_start_time': instance.bookingMorningStartTime,
 };
 
 const _$BookingShiftEnumMap = {

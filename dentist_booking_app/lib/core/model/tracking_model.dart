@@ -7,7 +7,7 @@ part 'tracking_model.freezed.dart';
 part 'tracking_model.g.dart';
 
 @Freezed(toJson: true)
-class TrackingModel with _$TrackingModel {
+abstract class TrackingModel with _$TrackingModel {
   const factory TrackingModel({
     @JsonKey(name: 'booking') required BookingModel booking,
     @JsonKey(name: 'queue_stats') required QueueStatsModel queueStats,

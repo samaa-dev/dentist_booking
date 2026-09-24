@@ -1,0 +1,30 @@
+
+{
+  "project_info": {
+    "project_number": "1025947806531",
+    "project_id": "dentist-booking-admin",
+    "storage_bucket": "dentist-booking-admin.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1025947806531:android:82efc9ac31d07d9acf9df6",
+        "android_client_info": {
+          "package_name": "com.samaadev.drbellem"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDgtfL58dZrG5Mb9QaR8YxR5xBgAcks9IQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

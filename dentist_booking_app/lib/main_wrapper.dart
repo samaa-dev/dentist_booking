@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dentist_booking_app/core/app_setup.dart';
 import 'package:dentist_booking_app/core/enum/enum.dart';
 import 'package:dentist_booking_app/core/extensions/os_extensions.dart';
+import 'package:dentist_booking_app/core/services/push_notification_service.dart';
 import 'package:dentist_booking_app/features/auth/blocs/auth/auth_cubit.dart';
 import 'package:dentist_booking_app/features/booking/blocs/booking/booking_cubit.dart';
 import 'package:flutter/material.dart';
@@ -39,8 +40,10 @@ class _MainWrapperLayout extends StatefulWidget {
   State<_MainWrapperLayout> createState() => _MainWrapperLayoutState();
 }
 
-class _MainWrapperLayoutState extends State<_MainWrapperLayout> with WidgetsBindingObserver {
+class _MainWrapperLayoutState extends State<_MainWrapperLayout>
+    with WidgetsBindingObserver {
   StreamSubscription<InternetStatus>? _internetSubscription;
+  StreamSubscription<PushNavigationIntent>? _pushNavSubscription;
 
   DateTime? _lastBackPressTime;
   late final List<Widget> _pages;
@@ -50,7 +53,8 @@ class _MainWrapperLayoutState extends State<_MainWrapperLayout> with WidgetsBind
     super.initState();
 
     final authState = context.read<AuthCubit>().state;
-    final bool isGuest = authState is Status && authState.typeLogin == TypeLogin.guest;
+    final bool isGuest =
+        authState is Status && authState.typeLogin == TypeLogin.guest;
 
     _pages = [
       const HomeScreen(),
@@ -68,6 +72,20 @@ class _MainWrapperLayoutState extends State<_MainWrapperLayout> with WidgetsBind
       const QueueScreen(),
       const ProfileScreen(),
     ];
+
+    _pushNavSubscription =
+        getIt<PushNotificationService>().navigationIntents.listen((intent) {
+      if (!mounted) return;
+      final ticket = intent.ticketCode?.trim();
+      if (ticket == null || ticket.isEmpty) {
+        context.read<PagesCubit>().updatePage(currentPageIndex: 2);
+        return;
+      }
+      context.read<PagesCubit>().updatePage(
+            currentPageIndex: 2,
+            data: {'ticket_code': ticket},
+          );
+    });
   }
 
   @override
@@ -112,7 +130,8 @@ class _MainWrapperLayoutState extends State<_MainWrapperLayout> with WidgetsBind
     }
 
     final now = DateTime.now();
-    if (_lastBackPressTime == null || now.difference(_lastBackPressTime!) > const Duration(seconds: 3)) {
+    if (_lastBackPressTime == null ||
+        now.difference(_lastBackPressTime!) > const Duration(seconds: 3)) {
       _lastBackPressTime = now;
 
       SnackbarMes.showToastMsg(
@@ -129,6 +148,7 @@ class _MainWrapperLayoutState extends State<_MainWrapperLayout> with WidgetsBind
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _internetSubscription?.cancel();
+    _pushNavSubscription?.cancel();
     super.dispose();
   }
 }

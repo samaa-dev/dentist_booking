@@ -3,6 +3,7 @@ import 'package:dentist_booking_app/core/extensions/os_extensions.dart';
 import 'package:dentist_booking_app/features/auth/blocs/auth/auth_cubit.dart';
 import 'package:dentist_booking_app/features/booking/widgets/cancel_booking_sheet.dart';
 import 'package:dentist_booking_app/features/queue/blocs/queue/queue_cubit.dart';
+import 'package:dentist_booking_app/features/queue/widget/queue_ticket_card.dart';
 import 'package:dentist_booking_app/generated/locale_keys.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -172,7 +173,7 @@ class _ActiveBookingsListState extends State<ActiveBookingsList> {
                                       Row(
                                         children: [
                                           Text(
-                                            '${LocaleKeys.queue_number.trnsltd}: ',
+                                            '${LocaleKeys.your_booking_number.trnsltd}: ',
                                             style: textTheme.bodySmall?.copyWith(
                                               color: colorScheme.onSurfaceVariant,
                                             ),
@@ -217,55 +218,23 @@ class _ActiveBookingsListState extends State<ActiveBookingsList> {
                             child: Column(
                               children: [
                                 const Divider(height: 20),
-                                LayoutBuilder(
-                                  builder: (context, constraints) {
-                                    final stackVertically =
-                                        constraints.maxWidth < 340;
-                                    final currentBlock = _statBlock(
-                                      context,
-                                      icon: Icons.play_arrow_rounded,
-                                      value: QueueTurnDisplay.currentQueueValue(
-                                        queue.queueStats,
-                                        shift: queue.booking.shift,
-                                      ),
-                                      label: LocaleKeys.current_number.trnsltd,
-                                      color: colorScheme.primary,
-                                    );
-                                    final beforeBlock = _statBlock(
-                                      context,
-                                      icon: isCalled
-                                          ? Icons.check_circle_rounded
-                                          : Icons.people_rounded,
-                                      value: QueueTurnDisplay.beforeYouValue(
-                                        kind: turnKind,
-                                        stats: queue.queueStats,
-                                      ),
-                                      label: QueueTurnDisplay.beforeYouLabel(
-                                        kind: turnKind,
-                                        stats: queue.queueStats,
-                                      ),
-                                      color: isHighlight
-                                          ? Colors.green
-                                          : colorScheme.secondary,
-                                    );
-
-                                    if (stackVertically) {
-                                      return Column(
-                                        children: [
-                                          currentBlock,
-                                          const SizedBox(height: 16),
-                                          beforeBlock,
-                                        ],
-                                      );
-                                    }
-
-                                    return Row(
-                                      children: [
-                                        Expanded(child: currentBlock),
-                                        Expanded(child: beforeBlock),
-                                      ],
-                                    );
-                                  },
+                                QueueTicketCard(
+                                  queueNumber: queue.booking.queueNumber,
+                                  ticketCode: queue.booking.ticketCode,
+                                  turnKind: turnKind,
+                                  showChrome: false,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 4,
+                                    horizontal: 0,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                _compactQueueStatsRow(
+                                  context,
+                                  queue: queue,
+                                  turnKind: turnKind,
+                                  isHighlight: isHighlight,
+                                  isCalled: isCalled,
                                 ),
                                 if (canCancel && queue.booking.id != null) ...[
                                   const SizedBox(height: 16),
@@ -273,7 +242,7 @@ class _ActiveBookingsListState extends State<ActiveBookingsList> {
                                     width: double.infinity,
                                     child: OutlinedButton.icon(
                                       onPressed: () {
-                                        showCancelBookingReasonSheet(
+                                        showCancelBookingConfirmDialog(
                                           context,
                                           bookingId: queue.booking.id!,
                                           onSuccess: () => context
@@ -312,7 +281,59 @@ class _ActiveBookingsListState extends State<ActiveBookingsList> {
     );
   }
 
-  Widget _statBlock(
+  Widget _compactQueueStatsRow(
+    BuildContext context, {
+    required TrackingModel queue,
+    required QueueTurnKind turnKind,
+    required bool isHighlight,
+    required bool isCalled,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final beforeLabel = QueueTurnDisplay.beforeYouLabel(
+      kind: turnKind,
+      stats: queue.queueStats,
+    );
+    final beforeColor = isHighlight ? Colors.green : colorScheme.secondary;
+
+    return Row(
+      children: [
+        Expanded(
+          child: _compactStatChip(
+            context,
+            icon: Icons.play_arrow_rounded,
+            value: QueueTurnDisplay.currentQueueValue(
+              queue.queueStats,
+              shift: queue.booking.shift,
+            ),
+            label: LocaleKeys.current_number.trnsltd,
+            color: colorScheme.primary,
+          ),
+        ),
+        Container(
+          width: 1,
+          height: 36,
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          color: colorScheme.outlineVariant.withOpacity(0.5),
+        ),
+        Expanded(
+          child: _compactStatChip(
+            context,
+            icon: isCalled
+                ? Icons.check_circle_rounded
+                : Icons.people_rounded,
+            value: QueueTurnDisplay.beforeYouValue(
+              kind: turnKind,
+              stats: queue.queueStats,
+            ),
+            label: beforeLabel,
+            color: beforeColor,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _compactStatChip(
     BuildContext context, {
     required IconData icon,
     required String value,
@@ -322,30 +343,30 @@ class _ActiveBookingsListState extends State<ActiveBookingsList> {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
 
-    return SizedBox(
-      width: double.infinity,
-      child: Column(
-        children: [
-          Container(
-            height: 50,
-            width: 50,
-            decoration: BoxDecoration(
-              color: color.withOpacity(.15),
-              shape: BoxShape.circle,
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 16, color: color),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                value,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                  fontSize: 13,
+                ),
+              ),
             ),
-            child: Icon(icon, color: color, size: 24),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            textAlign: TextAlign.center,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
+          ],
+        ),
+        const SizedBox(height: 2),
+        if (label.isNotEmpty)
           Text(
             label,
             textAlign: TextAlign.center,
@@ -356,9 +377,7 @@ class _ActiveBookingsListState extends State<ActiveBookingsList> {
               fontSize: 11,
             ),
           ),
-        ],
-      ),
+      ],
     );
   }
-
 }

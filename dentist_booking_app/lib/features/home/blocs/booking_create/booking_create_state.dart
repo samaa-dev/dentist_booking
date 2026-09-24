@@ -1,7 +1,7 @@
 part of 'booking_create_cubit.dart';
 
 @freezed
-class BookingCreateState with _$BookingCreateState {
+abstract class BookingCreateState with _$BookingCreateState {
   const factory BookingCreateState.initial() = _Initial;
   const factory BookingCreateState.loading() = _Loading;
 

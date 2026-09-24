@@ -17,6 +17,7 @@ void main() {
         'evening_full': false,
         'morning_available': false,
         'evening_available': true,
+        'booking_morning_start_time': '08:00',
       });
 
       expect(status.isOpen, isTrue);
@@ -24,6 +25,7 @@ void main() {
       expect(status.eveningFull, isFalse);
       expect(status.morningAvailable, isFalse);
       expect(status.eveningAvailable, isTrue);
+      expect(status.bookingMorningStartTime, '08:00');
       expect(status.hasAnyBookableShift, isTrue);
       expect(status.isShiftAvailable(BookingShift.morning), isFalse);
       expect(status.isShiftAvailable(BookingShift.evening), isTrue);

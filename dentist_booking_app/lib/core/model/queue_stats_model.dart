@@ -4,7 +4,7 @@ part 'queue_stats_model.freezed.dart';
 part 'queue_stats_model.g.dart';
 
 @freezed
-class QueueStatsModel with _$QueueStatsModel {
+abstract class QueueStatsModel with _$QueueStatsModel {
   const factory QueueStatsModel({
     @JsonKey(name: 'is_paused') required bool isPaused,
     @JsonKey(name: 'current_queue_number') required int currentQueueNumber,

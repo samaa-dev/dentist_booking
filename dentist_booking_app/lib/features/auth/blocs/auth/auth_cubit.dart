@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:dentist_booking_app/core/extensions/os_extensions.dart';
+import 'package:dentist_booking_app/core/services/push_notification_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -19,6 +20,7 @@ part 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   final SignInRepo _signInRepo;
+  final PushNotificationService? _pushNotificationService;
 
   late final StreamSubscription<gotrue.AuthState> _authSubscription;
   StreamSubscription<Map<String, dynamic>>? _profileSubscription;
@@ -26,7 +28,9 @@ class AuthCubit extends Cubit<AuthState> {
   AuthCubit({
     required SignInRepo signInRepo,
     required SupabaseClient client,
+    PushNotificationService? pushNotificationService,
   }) : _signInRepo = signInRepo,
+       _pushNotificationService = pushNotificationService,
        super(const AuthState.initial()) {
     _listenToAuthChanges();
   }
@@ -102,42 +106,90 @@ class AuthCubit extends Cubit<AuthState> {
 
     debugPrint('🔥 User Id: $userId');
 
+    // Best-effort only; must not block sign-in.
+    await _signInRepo.updateLastSeen(userId);
+
     try {
-      await _signInRepo.updateLastSeen(userId);
+      final profile = await _signInRepo.fetchProfileOnce(userId);
+      if (profile == null || profile.isEmpty) {
+        debugPrint('🔥 Profile not found for $userId');
+        _emitError(LocaleKeys.profile_not_found.trnsltd);
+        // Keep session; do not force logout — profile may be created shortly.
+        emit(
+          const AuthState.status(
+            status: AuthStatus.authenticated,
+            typeLogin: TypeLogin.google,
+          ),
+        );
+        _listenToProfileUpdates(userId);
+        return;
+      }
 
-      await _profileSubscription?.cancel();
-      _profileSubscription = _signInRepo
-          .getProfile(userId)
-          .listen(
-            (profile) {
-              final userStatus = (profile['status'] as String?).toAccountStatus();
-
-              final userRole = (profile['role'] as String?).toUserRole();
-
-              //
-
-              emit(
-                AuthState.status(
-                  status: AuthStatus.authenticated,
-                  userStatus: userStatus,
-                  userRole: userRole,
-                  data: profile['meta'],
-                  typeLogin: TypeLogin.google,
-                ),
-              );
-            },
-            onError: (e) => _emitError(LocaleKeys.failed_to_update_user_status.trnsltd),
-            onDone: () => _profileSubscription = null,
-          );
-    } catch (e) {
-      debugPrint('🔥 Error aa: $e');
+      _emitAuthenticatedFromProfile(profile);
+      _registerPushSafely();
+      _listenToProfileUpdates(userId);
+    } catch (e, st) {
+      debugPrint('🔥 Error loading profile: $e\n$st');
       _emitError(LocaleKeys.failed_to_update_user_status.trnsltd);
-      _handleNoSession();
+      // Keep authenticated shell if session is valid; Realtime may recover.
+      emit(
+        const AuthState.status(
+          status: AuthStatus.authenticated,
+          typeLogin: TypeLogin.google,
+        ),
+      );
+      _listenToProfileUpdates(userId);
     }
+  }
+
+  void _emitAuthenticatedFromProfile(Map<String, dynamic> profile) {
+    final userStatus = (profile['status'] as String?).toAccountStatus();
+    final userRole = (profile['role'] as String?).toUserRole();
+
+    emit(
+      AuthState.status(
+        status: AuthStatus.authenticated,
+        userStatus: userStatus,
+        userRole: userRole,
+        data: profile['meta'],
+        typeLogin: TypeLogin.google,
+      ),
+    );
+  }
+
+  void _listenToProfileUpdates(String userId) {
+    unawaited(_profileSubscription?.cancel());
+    _profileSubscription = _signInRepo.getProfile(userId).listen(
+      (profile) {
+        if (profile.isEmpty) return;
+        _emitAuthenticatedFromProfile(profile);
+      },
+      onError: (e, st) {
+        debugPrint('🔥 Profile stream error (non-fatal): $e\n$st');
+      },
+      onDone: () => _profileSubscription = null,
+    );
+  }
+
+  void _registerPushSafely() {
+    final push = _pushNotificationService;
+    if (push == null) return;
+    unawaited(() async {
+      try {
+        await push.requestPermissionAndRegister();
+      } catch (e, st) {
+        debugPrint('Push register failed (non-fatal): $e\n$st');
+      }
+    }());
   }
 
   Future<void> signOut() async {
     emit(const AuthState.loading());
+    try {
+      await _pushNotificationService?.unregisterCurrentToken();
+    } catch (e) {
+      debugPrint('Push unregister failed: $e');
+    }
     await _signInRepo.signOut();
     emit(const AuthState.status(status: AuthStatus.unauthenticated));
   }

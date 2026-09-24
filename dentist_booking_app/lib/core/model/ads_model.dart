@@ -4,7 +4,7 @@ part 'ads_model.freezed.dart';
 part 'ads_model.g.dart';
 
 @freezed
-class AdsModel with _$AdsModel {
+abstract class AdsModel with _$AdsModel {
   const factory AdsModel({
     String? id,
     String? title,

@@ -2,11 +2,13 @@ import 'package:dentist_booking_app/core/extensions/os_extensions.dart';
 import 'package:dentist_booking_app/core/model/booking_model.dart';
 import 'package:dentist_booking_app/core/model/booking_status_model.dart';
 import 'package:dentist_booking_app/features/auth/blocs/auth/auth_cubit.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/enum/enum.dart';
+import '../../../core/util/booking_ahead_confirm.dart';
 import '../../../core/util/info_snackbar.dart';
 import '../../../core/util/calendar_date.dart';
 import '../../../core/widgets/custom_text_form_field.dart';
@@ -31,6 +33,7 @@ class _BookingCreateScreenState extends State<BookingCreateScreen> {
   late BookingShift _selectedShift;
 
   bool _isForAnotherPerson = false;
+  bool _isPreviewingAhead = false;
   final _fullNameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _addressController = TextEditingController();
@@ -317,6 +320,7 @@ class _BookingCreateScreenState extends State<BookingCreateScreen> {
   }
 
   Future<void> _onConfirm() async {
+    if (_isPreviewingAhead) return;
     if (_isForAnotherPerson && !_formKey.currentState!.validate()) return;
 
     if (!_isShiftEnabled(_selectedShift)) {
@@ -341,6 +345,52 @@ class _BookingCreateScreenState extends State<BookingCreateScreen> {
 
     if (!mounted) return;
 
+    setState(() => _isPreviewingAhead = true);
+    SnackbarMes.showLoadingDialog(context);
+
+    int? peopleAhead;
+    try {
+      peopleAhead = await context
+          .read<BookingCreateCubit>()
+          .previewPeopleAhead(_selectedShift);
+    } finally {
+      if (mounted) {
+        Navigator.of(context).pop(); // close loading
+        setState(() => _isPreviewingAhead = false);
+      }
+    }
+
+    if (!mounted) return;
+
+    if (peopleAhead == null) {
+      SnackbarMes.showToastMsg(
+        context,
+        message: LocaleKeys.unknown_booking_error.trnsltd,
+      );
+      return;
+    }
+
+    final content = BookingAheadConfirm.isFirstInLine(peopleAhead)
+        ? LocaleKeys.booking_ahead_first_message.trnsltd
+        : LocaleKeys.booking_ahead_confirm_message.tr(
+            namedArgs: {'count': peopleAhead.toString()},
+          );
+
+    SnackbarMes.showCustomDialog(
+      context,
+      title: LocaleKeys.confirm_booking_title.trnsltd,
+      content: content,
+      buttonCancelText: LocaleKeys.cancel_button.trnsltd,
+      buttonConfirmText: LocaleKeys.confirm_booking_button.trnsltd,
+      onCancel: () => Navigator.of(context).pop(),
+      onConfirm: () {
+        Navigator.of(context).pop();
+        _submitBooking();
+      },
+    );
+  }
+
+  void _submitBooking() {
     final now = DateTime.now();
     final bookingDate = DateTime(
       now.year,

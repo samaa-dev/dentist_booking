@@ -1,16 +1,9 @@
 # dentist_booking_app
 
-A new Flutter project.
+تطبيق حجز مواعيد المرضى لعيادة الوفاء (Flutter + Supabase).
 
-## Getting Started
+## إشعارات الدور (Android)
 
-This project is a starting point for a Flutter application.
+راجع دليل الإعداد الكامل: [docs/PUSH_SETUP.md](docs/PUSH_SETUP.md)
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+باختصار: FCM مجاني + Edge Function `send-push` + جداول `device_tokens` / `notification_jobs`.

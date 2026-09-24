@@ -1,4 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
@@ -12,6 +14,8 @@ import 'core/app_setup.dart' as di;
 import 'core/bloc_observer.dart';
 import 'core/config/config.dart';
 import 'core/routes/app_route.dart';
+import 'core/services/push_notification_service.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,6 +31,19 @@ void main() async {
     anonKey: EnvConfig.supabaseKey,
   );
 
+  // Firebase must be ready before PushNotificationService touches messaging.
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    try {
+      if (Firebase.apps.isEmpty) {
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
+      }
+    } catch (e, st) {
+      debugPrint('Firebase init skipped: $e\n$st');
+    }
+  }
+
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
@@ -38,11 +55,13 @@ void main() async {
     ),
   );
 
-  await Future.wait(
-    [
-      di.setUp(),
-    ],
-  );
+  await di.setUp();
+
+  try {
+    await di.getIt<PushNotificationService>().initialize();
+  } catch (e, st) {
+    debugPrint('Push init skipped: $e\n$st');
+  }
 
   timeago.setLocaleMessages('ar', timeago.ArMessages());
   timeago.setLocaleMessages('en', timeago.EnMessages());

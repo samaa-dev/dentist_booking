@@ -15,7 +15,7 @@ dynamic queueNumberToJson(String? value) {
 }
 
 @freezed
-class BookingModel with _$BookingModel {
+abstract class BookingModel with _$BookingModel {
   const factory BookingModel({
     String? id,
     @JsonKey(name: "booking_date") required DateTime bookingDate,
