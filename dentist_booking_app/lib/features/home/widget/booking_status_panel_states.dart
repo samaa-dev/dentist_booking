@@ -218,3 +218,177 @@ class BookingStatusErrorPanel extends StatelessWidget {
     );
   }
 }
+
+/// Full-panel alert when clinic booking is globally disabled.
+class BookingStoppedAlertPanel extends StatelessWidget {
+  const BookingStoppedAlertPanel({
+    super.key,
+    required this.message,
+    required this.onRefresh,
+  });
+
+  final String message;
+  final Future<void> Function() onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.easeOutCubic,
+      tween: Tween(begin: 0.0, end: 1.0),
+      builder: (context, value, child) => Transform.translate(
+        offset: Offset(0, 20 * (1 - value)),
+        child: Opacity(opacity: value.clamp(0.0, 1.0), child: child),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(26),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(20, 12, 12, 24),
+              decoration: BoxDecoration(
+                color: colorScheme.errorContainer.withOpacity(0.10),
+                borderRadius: BorderRadius.circular(26),
+                border: Border.all(
+                  color: colorScheme.error.withOpacity(0.35),
+                  width: 1.2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: colorScheme.error.withOpacity(0.18),
+                    blurRadius: 16,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Stack(
+                children: [
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(
+                      top: 8,
+                      end: 28,
+                      start: 8,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.warning_amber_rounded,
+                          size: 52,
+                          color: colorScheme.error,
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          LocaleKeys.booking_status_stopped.trnsltd,
+                          textAlign: TextAlign.center,
+                          style: textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          message,
+                          textAlign: TextAlign.center,
+                          maxLines: 6,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.error,
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Positioned.directional(
+                    textDirection: Directionality.of(context),
+                    top: 0,
+                    end: 0,
+                    child: _StoppedPanelRefreshButton(onRefresh: onRefresh),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StoppedPanelRefreshButton extends StatefulWidget {
+  const _StoppedPanelRefreshButton({required this.onRefresh});
+
+  final Future<void> Function() onRefresh;
+
+  @override
+  State<_StoppedPanelRefreshButton> createState() =>
+      _StoppedPanelRefreshButtonState();
+}
+
+class _StoppedPanelRefreshButtonState extends State<_StoppedPanelRefreshButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _spinController;
+  bool _refreshing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _spinController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+  }
+
+  @override
+  void dispose() {
+    _spinController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleTap() async {
+    if (_refreshing) return;
+    setState(() => _refreshing = true);
+    _spinController.repeat();
+    try {
+      await widget.onRefresh();
+    } finally {
+      if (mounted) {
+        _spinController.stop();
+        _spinController.reset();
+        setState(() => _refreshing = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final tooltip =
+        MaterialLocalizations.of(context).refreshIndicatorSemanticLabel;
+
+    return IconButton(
+      onPressed: _refreshing ? null : _handleTap,
+      tooltip: tooltip,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+      style: IconButton.styleFrom(
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      icon: RotationTransition(
+        turns: _spinController,
+        child: Icon(
+          Icons.refresh_rounded,
+          color: colorScheme.error.withOpacity(0.85),
+        ),
+      ),
+    );
+  }
+}

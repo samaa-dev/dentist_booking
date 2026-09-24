@@ -30,42 +30,61 @@ class BookingStatusPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<QueueCubit, QueueState>(
-        builder: (context, queueState) {
-          final errorMessage = queueState.maybeWhen(
-            error: (message) => message,
-            orElse: () => null,
+      builder: (context, queueState) {
+        final errorMessage = queueState.maybeWhen(
+          error: (message) => message,
+          orElse: () => null,
+        );
+        if (errorMessage != null) {
+          return BookingStatusErrorPanel(
+            message: errorMessage,
+            onRetry: () =>
+                context.read<QueueCubit>().loadActiveBookingQueue(force: true),
           );
-          if (errorMessage != null) {
-            return BookingStatusErrorPanel(
-              message: errorMessage,
-              onRetry: () =>
-                  context.read<QueueCubit>().loadActiveBookingQueue(force: true),
-            );
-          }
+        }
 
-          // التحقق من وجود حجوزات فعالة
-          final activeQueues = queueState.maybeWhen(
-            activeQueueLoaded: (queues) => queues as List<dynamic>,
-            orElse: () => <dynamic>[],
-          );
+        // Wait until active bookings are resolved to avoid UI flash.
+        final activeQueues = queueState.maybeWhen(
+          activeQueueLoaded: (queues) => queues,
+          orElse: () => null,
+        );
+        if (activeQueues == null) {
+          return const BookingStatusLoadingPanel();
+        }
 
-          if (activeQueues.isNotEmpty) {
-            return _ActiveBookingPanel(
-              queues: activeQueues.cast(),
-              onBookTap: onBookTap,
-            );
-          }
-
-        // إذا لم يكن هناك حجز فعال، عرض حالة الحجز العادية
         return BlocBuilder<BookingStatusCubit, BookingStatusState>(
           builder: (context, state) {
             return state.when(
-              initial: () => BookingStatusLoadingPanel(),
-              loading: () => BookingStatusLoadingPanel(),
-              loaded: (status) => _BookingStatusPanelLayout(
-                status: status,
-                onBookTap: onBookTap,
-              ),
+              initial: () => const BookingStatusLoadingPanel(),
+              loading: () => const BookingStatusLoadingPanel(),
+              loaded: (status) {
+                final isBookingEnabled = status.isBookingEnabled ?? false;
+                if (!isBookingEnabled) {
+                  final stopReason = status.stopReason?.trim();
+                  final message =
+                      (stopReason != null && stopReason.isNotEmpty)
+                          ? stopReason
+                          : LocaleKeys.booking_disabled.trnsltd;
+                  return BookingStoppedAlertPanel(
+                    message: message,
+                    onRefresh: () => context
+                        .read<BookingStatusCubit>()
+                        .loadStatus(showLoading: false),
+                  );
+                }
+
+                if (activeQueues.isNotEmpty) {
+                  return _ActiveBookingPanel(
+                    queues: activeQueues.cast<TrackingModel>(),
+                    onBookTap: onBookTap,
+                  );
+                }
+
+                return _BookingStatusPanelLayout(
+                  status: status,
+                  onBookTap: onBookTap,
+                );
+              },
               error: (error) => BookingStatusErrorPanel(
                 message: error,
                 onRetry: () => context.read<BookingStatusCubit>().loadStatus(),
@@ -94,9 +113,22 @@ class _BookingStatusPanelLayout extends StatelessWidget {
     final locale = context.locale;
 
     final bool isBookingEnabled = status.isBookingEnabled ?? false;
+    final String? stopReason = status.stopReason?.trim();
+
+    if (!isBookingEnabled) {
+      final message = (stopReason != null && stopReason.isNotEmpty)
+          ? stopReason
+          : LocaleKeys.booking_disabled.trnsltd;
+      return BookingStoppedAlertPanel(
+        message: message,
+        onRefresh: () => context
+            .read<BookingStatusCubit>()
+            .loadStatus(showLoading: false),
+      );
+    }
+
     final bool hasBookableShift = status.hasAnyBookableShift;
     final bool canBook = isBookingEnabled && hasBookableShift;
-    final String? stopReason = status.stopReason?.trim();
 
     final BookingShift? shift = status.shift;
     final bool isMorningShift = shift == BookingShift.morning;
@@ -106,14 +138,9 @@ class _BookingStatusPanelLayout extends StatelessWidget {
     final statusColor = canBook
         ? colorScheme.primary
         : colorScheme.error;
-    final String statusText;
-    if (!isBookingEnabled) {
-      statusText = LocaleKeys.booking_status_stopped.trnsltd;
-    } else if (!hasBookableShift) {
-      statusText = LocaleKeys.booking_status_closed.trnsltd;
-    } else {
-      statusText = LocaleKeys.booking_status_open.trnsltd;
-    }
+    final String statusText = hasBookableShift
+        ? LocaleKeys.booking_status_open.trnsltd
+        : LocaleKeys.booking_status_closed.trnsltd;
 
     final shiftText = shift == null
         ? LocaleKeys.booking_closed_now.trnsltd
@@ -131,11 +158,7 @@ class _BookingStatusPanelLayout extends StatelessWidget {
     }
 
     final String stoppedSubtitle;
-    if (!isBookingEnabled) {
-      stoppedSubtitle = (stopReason != null && stopReason.isNotEmpty)
-          ? stopReason
-          : LocaleKeys.booking_disabled.trnsltd;
-    } else if (status.shiftClosed == BookingShift.morning &&
+    if (status.shiftClosed == BookingShift.morning &&
         !status.isShiftAvailable(BookingShift.evening)) {
       stoppedSubtitle = LocaleKeys.morning_shift_closed_today.trnsltd;
     } else if (status.shiftClosed == BookingShift.evening &&
