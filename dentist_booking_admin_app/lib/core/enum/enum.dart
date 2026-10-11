@@ -104,7 +104,7 @@ enum AccountStatus {
 }
 
 extension StaffPositionExt on StaffPosition {
-  String get name {
+  String get label {
     switch (this) {
       case StaffPosition.nurse:
         return LocaleKeys.pos_nurse.trnsltd;

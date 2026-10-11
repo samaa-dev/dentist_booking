@@ -11,7 +11,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
+import '../../../core/access/access_cubit.dart';
 import '../../../core/util/util.dart';
+import '../../staff/view/staff_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -92,6 +94,14 @@ class ProfileScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 16),
+                      if (context.watch<AccessCubit>().access.canManageStaff)
+                        _ProfileTile(
+                          icon: HugeIcons.strokeRoundedUserAccount,
+                          title: LocaleKeys.staff_management.trnsltd,
+                          subtitle: LocaleKeys.staff_header_subtitle.trnsltd,
+                          onTap: () =>
+                              Navigator.of(context).push(StaffScreen.route()),
+                        ),
                       _ProfileTile(
                         icon: HugeIcons.strokeRoundedEarth,
                         title: context.locale.languageCode == 'ar'

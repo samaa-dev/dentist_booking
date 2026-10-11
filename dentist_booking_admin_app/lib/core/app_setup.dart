@@ -1,3 +1,7 @@
+import 'package:dentist_booking_admin_app/core/access/access_cubit.dart';
+import 'package:dentist_booking_admin_app/core/access/access_repo.dart';
+import 'package:dentist_booking_admin_app/features/staff/blocs/staff_cubit.dart';
+import 'package:dentist_booking_admin_app/features/staff/repo/staff_repo.dart';
 import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -40,6 +44,14 @@ Future<void> setUp() async {
 
   getIt.registerFactory(() => ThemeCubit());
   getIt.registerFactory(() => PagesCubit());
+
+  final accessRepo = AccessRepo(client: client);
+  getIt.registerLazySingleton<AccessRepo>(() => accessRepo);
+  getIt.registerFactory(() => AccessCubit(accessRepo: accessRepo));
+
+  final staffRepo = StaffRepo(client: client);
+  getIt.registerLazySingleton<StaffRepo>(() => staffRepo);
+  getIt.registerFactory(() => StaffCubit(staffRepo: staffRepo));
 
   final settingsRepo = SettingsRepo(client: client);
   getIt.registerLazySingleton<SettingsRepo>(() => settingsRepo);

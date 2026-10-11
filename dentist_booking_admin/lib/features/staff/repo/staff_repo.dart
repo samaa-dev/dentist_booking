@@ -3,169 +3,130 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/model/profile_model.dart';
-import '../../../core/model/staff_model.dart';
+import '../../../core/model/staff_member.dart';
 import '../../../core/util/session_guard.dart';
 
+/// Error code from the server, mapped to a message by the UI.
+class StaffActionException implements Exception {
+  const StaffActionException(this.code);
+  final String code;
+
+  @override
+  String toString() => 'StaffActionException($code)';
+}
+
 class StaffRepo {
+  StaffRepo({required SupabaseClient client}) : _client = client;
+
   final SupabaseClient _client;
 
-  StaffRepo({
-    required SupabaseClient client,
-  }) : _client = client;
-
-  /// 📌 Get all Profile
-  Future<List<ProfileModel>> getAllProfiles() async {
+  Future<List<StaffMember>> getStaff() async {
     try {
-      final response = await _client.rpc('get_all_profile').select();
-
-      return response
-          .map<ProfileModel>((e) => ProfileModel.fromJson(e))
+      final rows = await _client.rpc('get_staff_members') as List;
+      return rows
+          .map((e) => StaffMember.fromJson(Map<String, dynamic>.from(e as Map)))
           .toList();
     } catch (e) {
-      final sessionError = SessionGuard.asSessionExpired(e);
-      if (sessionError != null) throw sessionError;
-      debugPrint("Failed to fetch profile list: $e");
-      throw Exception('Failed to fetch profile list: $e');
+      throw _mapError(e);
     }
   }
 
-  /// 📌 Get all staff
-  Future<List<StaffModel>> getAllStaff() async {
-    try {
-      final response = await _client.rpc('get_all_staff').select();
-
-      return response.map<StaffModel>((e) => StaffModel.fromJson(e)).toList();
-    } catch (e) {
-      final sessionError = SessionGuard.asSessionExpired(e);
-      if (sessionError != null) throw sessionError;
-      throw Exception('Failed to fetch staff list: $e');
-    }
+  /// Creates the login (email + password) and the staff profile in one step.
+  Future<void> createStaff(StaffDraft draft) async {
+    await _invokeManageStaff({
+      'action': 'create',
+      'email': draft.email,
+      'password': draft.password,
+      'full_name': draft.fullName,
+      'phone': draft.phone,
+      'position': draft.position.code,
+      'permissions': draft.permissions.map((p) => p.code).toList(),
+    });
   }
 
-  /// 📌 Get Staff by ID
-  Future<StaffModel> getStaffById(String staffId) async {
+  Future<void> updateStaff(String id, StaffDraft draft) async {
     try {
-      final resp = await _client
-          .rpc(
-            'get_staff_by_id',
-            params: {'p_id': staffId},
-          )
-          .select()
-          .single();
-
-      return StaffModel.fromJson(resp);
-    } catch (e) {
-      final sessionError = SessionGuard.asSessionExpired(e);
-      if (sessionError != null) throw sessionError;
-      throw Exception('Failed to load staff: $e');
-    }
-  }
-
-  /// 📌 Create new staff
-  Future<StaffModel> createStaff(StaffModel staff) async {
-    debugPrint("STATUS BEFORE RPC = ${staff.status.code}");
-
-    try {
-      final resp = await _client
-          .rpc(
-            'create_staff',
-            params: {
-              'p_user_id': staff.userId,
-              'p_full_name': staff.fullName,
-              'p_email': staff.email,
-              'p_phone': staff.phone,
-              'p_position': staff.position.code,
-              'p_shift': staff.shiftType.code,
-              'p_status': staff.status.code,
-            },
-          )
-          .select()
-          .single();
-
-      return StaffModel.fromJson(resp);
-    } catch (e) {
-      final sessionError = SessionGuard.asSessionExpired(e);
-      if (sessionError != null) throw sessionError;
-      debugPrint(e.toString());
-      throw Exception('Failed to create staff: $e');
-    }
-  }
-
-  /// 📌 Update staff
-  Future<StaffModel> updateStaff(StaffModel staff) async {
-    try {
-      final resp = await _client
-          .rpc(
-            'update_staff',
-            params: {
-              'p_id': staff.id,
-              'p_full_name': staff.fullName,
-              'p_email': staff.email,
-              'p_phone': staff.phone,
-              'p_position': staff.position.code,
-              'p_shift': staff.shiftType.code,
-              'p_status': staff.status.code,
-            },
-          )
-          .select()
-          .single();
-
-      return StaffModel.fromJson(resp);
-    } catch (e) {
-      final sessionError = SessionGuard.asSessionExpired(e);
-      if (sessionError != null) throw sessionError;
-      throw Exception('Failed to update staff: $e');
-    }
-  }
-
-  /// 📌 Delete staff
-  Future<bool> deleteStaff(String id) async {
-    try {
-      final resp = await _client.rpc(
-        'delete_staff',
-        params: {'p_id': id},
-      );
-
-      return resp == true;
-    } catch (e) {
-      final sessionError = SessionGuard.asSessionExpired(e);
-      if (sessionError != null) throw sessionError;
-      throw Exception('Failed to delete staff: $e');
-    }
-  }
-
-  Future<bool> changePassword({
-    required String staffId,
-    required String newPassword,
-  }) async {
-    try {
-      final res = await _client.functions.invoke(
-        'change_staff_password',
-        body: {
-          'user_id': staffId,
-          'new_password': newPassword,
+      await _client.rpc(
+        'update_staff_member',
+        params: {
+          'p_id': id,
+          'p_full_name': draft.fullName,
+          'p_phone': draft.phone,
+          'p_position': draft.position.code,
+          'p_permissions': draft.permissions.map((p) => p.code).toList(),
         },
       );
-
-      // res.data قد يكون String أو Map
-      Map<String, dynamic> json;
-
-      if (res.data is String) {
-        json = jsonDecode(res.data);
-      } else {
-        json = res.data;
-      }
-
-      if (json['status'] == 'success') {
-        return true;
-      }
-
-      return false;
     } catch (e) {
-      final sessionError = SessionGuard.asSessionExpired(e);
-      if (sessionError != null) throw sessionError;
-      throw Exception("Failed to change password: $e");
+      throw _mapError(e);
+    }
+  }
+
+  Future<void> setActive(String id, {required bool active}) async {
+    try {
+      await _client.rpc(
+        'set_staff_active',
+        params: {'p_id': id, 'p_active': active},
+      );
+    } catch (e) {
+      throw _mapError(e);
+    }
+  }
+
+  Future<void> setPassword(String userId, String password) async {
+    await _invokeManageStaff({
+      'action': 'set_password',
+      'user_id': userId,
+      'password': password,
+    });
+  }
+
+  Future<void> deleteStaff(String id) async {
+    try {
+      await _client.rpc('delete_staff', params: {'p_id': id});
+    } catch (e) {
+      throw _mapError(e);
+    }
+  }
+
+  Future<void> _invokeManageStaff(Map<String, dynamic> body) async {
+    try {
+      final res = await _client.functions.invoke('manage-staff', body: body);
+      final data = res.data is String ? jsonDecode(res.data) : res.data;
+      if (data is Map && data['status'] == 'success') return;
+      throw StaffActionException(
+        (data is Map ? data['error'] : null)?.toString() ?? 'unknown',
+      );
+    } on FunctionException catch (e) {
+      final details = e.details;
+      final data = details is String ? _tryDecode(details) : details;
+      throw StaffActionException(
+        (data is Map ? data['error'] : null)?.toString() ?? 'unknown',
+      );
+    } on StaffActionException {
+      rethrow;
+    } catch (e) {
+      throw _mapError(e);
+    }
+  }
+
+  Object _mapError(Object e) {
+    final sessionError = SessionGuard.asSessionExpired(e);
+    if (sessionError != null) return sessionError;
+    debugPrint('Staff action failed: $e');
+    if (e is PostgrestException) {
+      if (e.code == '42501') return const StaffActionException('forbidden');
+      if (e.message.contains('staff_not_found')) {
+        return const StaffActionException('staff_not_found');
+      }
+    }
+    return const StaffActionException('unknown');
+  }
+
+  static Object? _tryDecode(String s) {
+    try {
+      return jsonDecode(s);
+    } catch (_) {
+      return null;
     }
   }
 }

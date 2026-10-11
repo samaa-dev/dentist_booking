@@ -420,5 +420,37 @@ abstract class  LocaleKeys {
   static const update_required_minimum = 'update_required_minimum';
   static const update_now_button = 'update_now_button';
   static const update_required_contact_admin = 'update_required_contact_admin';
+  static const perm_announcements = 'perm_announcements';
+  static const perm_announcements_desc = 'perm_announcements_desc';
+  static const perm_bookings = 'perm_bookings';
+  static const perm_bookings_desc = 'perm_bookings_desc';
+  static const perm_patients = 'perm_patients';
+  static const perm_patients_desc = 'perm_patients_desc';
+  static const perm_queue = 'perm_queue';
+  static const perm_queue_desc = 'perm_queue_desc';
+  static const perm_settings = 'perm_settings';
+  static const perm_settings_desc = 'perm_settings_desc';
+  static const perm_statistics = 'perm_statistics';
+  static const perm_statistics_desc = 'perm_statistics_desc';
+  static const staff_change_password = 'staff_change_password';
+  static const staff_create_button = 'staff_create_button';
+  static const staff_created = 'staff_created';
+  static const staff_delete_confirm_detail = 'staff_delete_confirm_detail';
+  static const staff_err_already_staff = 'staff_err_already_staff';
+  static const staff_err_email_in_use = 'staff_err_email_in_use';
+  static const staff_err_forbidden = 'staff_err_forbidden';
+  static const staff_err_invalid_email = 'staff_err_invalid_email';
+  static const staff_err_not_found = 'staff_err_not_found';
+  static const staff_err_password_short = 'staff_err_password_short';
+  static const staff_err_unknown = 'staff_err_unknown';
+  static const staff_header_subtitle = 'staff_header_subtitle';
+  static const staff_new_password = 'staff_new_password';
+  static const staff_no_permissions = 'staff_no_permissions';
+  static const staff_password = 'staff_password';
+  static const staff_password_hint = 'staff_password_hint';
+  static const staff_permissions_hint = 'staff_permissions_hint';
+  static const staff_saved = 'staff_saved';
+  static const staff_section_account = 'staff_section_account';
+  static const staff_section_permissions = 'staff_section_permissions';
 
 }

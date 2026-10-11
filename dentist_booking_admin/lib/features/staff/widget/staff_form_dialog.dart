@@ -1,314 +1,351 @@
-import 'package:dentist_booking_admin/core/extensions/os_extensions.dart';
-import 'package:dentist_booking_admin/core/widgets/custom_dropdown.dart';
-import 'package:dentist_booking_admin/core/widgets/custom_text_form_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import '../../../core/access/app_permission.dart';
 import '../../../core/enum/enum.dart';
-import '../../../core/model/staff_model.dart';
+import '../../../core/extensions/os_extensions.dart';
+import '../../../core/model/staff_member.dart';
+import '../../../core/util/util.dart';
+import '../../../core/widgets/custom_dropdown.dart';
+import '../../../core/widgets/custom_text_form_field.dart';
 import '../../../core/widgets/dialog_title_header.dart';
-import '../../../core/widgets/footer_dialog.dart';
 import '../../../generated/locale_keys.g.dart';
 import '../blocs/staff/staff_cubit.dart';
-import 'chosse_dropdown_profile.dart' show ChosseDropdownProfile;
+import 'staff_permissions_picker.dart';
 
+/// Create a staff account (email + password + permissions) or edit one.
 class StaffFormDialog extends StatefulWidget {
-  final StaffModel? staff;
+  const StaffFormDialog({super.key, this.member});
 
-  const StaffFormDialog({super.key, this.staff});
+  final StaffMember? member;
+
+  static Future<void> show(BuildContext context, {StaffMember? member}) {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => BlocProvider.value(
+        value: context.read<StaffCubit>(),
+        child: StaffFormDialog(member: member),
+      ),
+    );
+  }
 
   @override
   State<StaffFormDialog> createState() => _StaffFormDialogState();
 }
 
 class _StaffFormDialogState extends State<StaffFormDialog> {
+  static const _defaultPermissions = {AppPermission.bookings, AppPermission.queue};
+
   final _formKey = GlobalKey<FormState>();
-  late StaffCubit _staffCubit;
+  late final TextEditingController _fullName;
+  late final TextEditingController _email;
+  late final TextEditingController _phone;
+  late final TextEditingController _password;
+  late StaffPosition _position;
+  late Set<AppPermission> _permissions;
+  bool _obscurePassword = true;
+  bool _saving = false;
+  String? _error;
 
-  late TextEditingController _fullName;
-  late TextEditingController _email;
-  late TextEditingController _phone;
-
-  String? _position;
-  String? _shift;
-  String? _status;
-  String? _selectedProfileUserId;
+  bool get _isEdit => widget.member != null;
 
   @override
   void initState() {
     super.initState();
-    final s = widget.staff;
-    _staffCubit = BlocProvider.of<StaffCubit>(context);
-
-    _fullName = TextEditingController(text: s?.fullName ?? "");
-    _email = TextEditingController(text: s?.email ?? "");
-    _phone = TextEditingController(text: s?.phone ?? "");
-
-    _position = s?.position.code ?? "nurse";
-    _shift = s?.shiftType.code ?? "morning";
-    _status = s?.status.code ?? "active";
-
-    _getAllProfils();
+    final m = widget.member;
+    _fullName = TextEditingController(text: m?.fullName ?? '');
+    _email = TextEditingController(text: m?.email ?? '');
+    _phone = TextEditingController(text: m?.phone ?? '');
+    _password = TextEditingController();
+    _position = m?.position ?? StaffPosition.receptionist;
+    _permissions = {...?m?.permissions};
+    if (m == null) _permissions = {..._defaultPermissions};
   }
 
-  _getAllProfils() {
-    if (widget.staff == null) {
-      _staffCubit.getAllProfile();
-    }
+  @override
+  void dispose() {
+    _fullName.dispose();
+    _email.dispose();
+    _phone.dispose();
+    _password.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Container(
-        width: 560,
-        padding: const EdgeInsets.all(12),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 720),
         child: Form(
           key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              DialogTitleHeader(
-                title: widget.staff == null
-                    ? LocaleKeys.add_staff.trnsltd
-                    : LocaleKeys.edit_staff.trnsltd,
-                subtitle: LocaleKeys.staff_form_subtitle.trnsltd,
-              ),
-
-              if (widget.staff == null) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  child: ChosseDropdownProfile(
-                    value: _selectedProfileUserId,
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedProfileUserId = value;
-                      });
-                    },
-                  ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                DialogTitleHeader(
+                  title: _isEdit
+                      ? LocaleKeys.edit_staff.trnsltd
+                      : LocaleKeys.add_staff.trnsltd,
+                  subtitle: _isEdit
+                      ? LocaleKeys.staff_edit_subtitle.trnsltd
+                      : LocaleKeys.staff_create_subtitle.trnsltd,
                 ),
-                SizedBox(height: 10),
-              ],
-              Wrap(
-                spacing: 16,
-                runSpacing: 10,
-                children: [
-                  // ======================
-                  // TEXT FIELDS → LEFT
-                  // ======================
-                  SizedBox(
-                    width: 250,
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: _buildTextField(
-                        context,
-                        controller: _fullName,
-                        keyboardType: TextInputType.text,
-                        hintText: LocaleKeys.staff_full_name.trnsltd,
-                        prefixIcon: HugeIcons.strokeRoundedUser,
-                        validator: true,
+                const SizedBox(height: 8),
+                _SectionTitle(
+                  icon: HugeIcons.strokeRoundedUserAccount,
+                  text: LocaleKeys.staff_section_account.trnsltd,
+                ),
+                const SizedBox(height: 10),
+                _row([
+                  CustomTextFormField(
+                    controller: _fullName,
+                    keyboardType: TextInputType.name,
+                    hintText: LocaleKeys.staff_full_name.trnsltd,
+                    prefixIcon: const Icon(HugeIcons.strokeRoundedUser),
+                    validator: _required,
+                  ),
+                  CustomTextFormField(
+                    controller: _phone,
+                    keyboardType: TextInputType.phone,
+                    hintText: LocaleKeys.staff_phone.trnsltd,
+                    prefixIcon: const Icon(HugeIcons.strokeRoundedSmartPhone01),
+                  ),
+                ]),
+                const SizedBox(height: 12),
+                _row([
+                  CustomTextFormField(
+                    controller: _email,
+                    keyboardType: TextInputType.emailAddress,
+                    hintText: LocaleKeys.staff_email.trnsltd,
+                    prefixIcon: const Icon(HugeIcons.strokeRoundedMail01),
+                    readOnly: _isEdit,
+                    validator: _isEdit ? null : _validateEmail,
+                  ),
+                  CustomDropdown<StaffPosition>(
+                    value: _position,
+                    enableSearch: false,
+                    hintText: LocaleKeys.staff_position.trnsltd,
+                    items: StaffPosition.values
+                        .map(
+                          (p) => DropdownMenuItem(value: p, child: Text(p.name)),
+                        )
+                        .toList(),
+                    onChanged: (v) => setState(() => _position = v ?? _position),
+                  ),
+                ]),
+                if (!_isEdit) ...[
+                  const SizedBox(height: 12),
+                  CustomTextFormField(
+                    controller: _password,
+                    keyboardType: TextInputType.visiblePassword,
+                    obscureText: _obscurePassword,
+                    hintText: LocaleKeys.staff_password.trnsltd,
+                    prefixIcon: const Icon(HugeIcons.strokeRoundedLock),
+                    suffixIcon: IconButton(
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
+                      icon: Icon(
+                        _obscurePassword
+                            ? HugeIcons.strokeRoundedViewOff
+                            : HugeIcons.strokeRoundedView,
                       ),
                     ),
+                    validator: _validatePassword,
                   ),
-
-                  SizedBox(
-                    width: 250,
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: _buildTextField(
-                        context,
-                        controller: _email,
-                        keyboardType: TextInputType.emailAddress,
-                        hintText: LocaleKeys.staff_email.trnsltd,
-                        prefixIcon: HugeIcons.strokeRoundedMail01,
-                        validator: true,
-                      ),
-                    ),
-                  ),
-
-                  SizedBox(
-                    width: 250,
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: _buildTextField(
-                        context,
-                        controller: _phone,
-                        keyboardType: TextInputType.phone,
-                        hintText: LocaleKeys.staff_phone.trnsltd,
-                        prefixIcon: HugeIcons.strokeRoundedSmartPhone01,
-                        validator: false,
-                      ),
-                    ),
-                  ),
-
-                  // ======================
-                  // DROPDOWNS → RIGHT
-                  // ======================
-                  SizedBox(
-                    width: 250,
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: CustomDropdown<String>(
-                        value: _position,
-                        enableSearch: false,
-                        hintText: LocaleKeys.staff_position.trnsltd,
-                        items: _getStaffPosition(StaffPosition.values),
-                        onChanged: (v) => setState(() => _position = v),
-                      ),
-                    ),
-                  ),
-
-                  SizedBox(
-                    width: 250,
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: CustomDropdown<String>(
-                        value: _shift,
-                        enableSearch: false,
-                        hintText: LocaleKeys.staff_shift_type.trnsltd,
-                        items: _getShiftType(ShiftType.values),
-                        onChanged: (v) => setState(() => _shift = v),
-                      ),
-                    ),
-                  ),
-
-                  SizedBox(
-                    width: 250,
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: CustomDropdown<String>(
-                        value: _status,
-                        enableSearch: false,
-                        hintText: LocaleKeys.staff_status.trnsltd,
-                        items: _getStaffStatus(AccountStatus.values),
-                        onChanged: (v) {
-                          debugPrint(v);
-                          setState(() => _status = v);
-                        },
-                      ),
+                  const SizedBox(height: 6),
+                  Text(
+                    LocaleKeys.staff_password_hint.trnsltd,
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurface.withOpacity(.6),
                     ),
                   ),
                 ],
-              ),
-
-              const SizedBox(height: 30),
-
-              FooterDialog(
-                title: widget.staff == null
-                    ? LocaleKeys.add_button.trnsltd
-                    : LocaleKeys.save_button.trnsltd,
-                onConfirm: () => _onConfirm(context),
-              ),
-            ],
+                const SizedBox(height: 22),
+                _SectionTitle(
+                  icon: HugeIcons.strokeRoundedShield01,
+                  text: LocaleKeys.staff_section_permissions.trnsltd,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  LocaleKeys.staff_permissions_hint.trnsltd,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurface.withOpacity(.6),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                StaffPermissionsPicker(
+                  selected: _permissions,
+                  onChanged: (v) => setState(() => _permissions = v),
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 14),
+                  _ErrorBanner(message: _error!),
+                ],
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _saving ? null : () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: Text(LocaleKeys.cancel_button.trnsltd),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: FilledButton.icon(
+                        onPressed: _saving ? null : _submit,
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        icon: _saving
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(HugeIcons.strokeRoundedTick02),
+                        label: Text(
+                          _isEdit
+                              ? LocaleKeys.save_button.trnsltd
+                              : LocaleKeys.staff_create_button.trnsltd,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildTextField(
-    BuildContext context, {
-    required TextEditingController controller,
-    required TextInputType keyboardType,
-    required String hintText,
-    required IconData prefixIcon,
-    bool validator = false,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return SizedBox(
-      width: 250,
-      child: CustomTextFormField(
-        controller: controller,
-        keyboardType: keyboardType,
-        hintText: hintText,
-        prefixIcon: Icon(
-          prefixIcon,
-          color: colorScheme.onSurface,
-        ),
-        validator: validator
-            ? (v) => (v == null || v.isEmpty)
-                  ? LocaleKeys.required_field.trnsltd
-                  : null
-            : null,
-      ),
+  Widget _row(List<Widget> children) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: children[0]),
+        const SizedBox(width: 12),
+        Expanded(child: children[1]),
+      ],
     );
   }
 
-  _getStaffPosition(List<StaffPosition> position) {
-    return position.map((position) {
-      return DropdownMenuItem(
-        value: position.code,
-        child: Text(position.name),
-      );
-    }).toList();
+  String? _required(String? v) =>
+      (v == null || v.trim().isEmpty) ? LocaleKeys.required_field.trnsltd : null;
+
+  String? _validateEmail(String? v) {
+    final value = v?.trim() ?? '';
+    if (value.isEmpty) return LocaleKeys.required_field.trnsltd;
+    final ok = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value);
+    return ok ? null : LocaleKeys.staff_err_invalid_email.trnsltd;
   }
 
-  _getShiftType(List<ShiftType> shift) {
-    return shift.map((shift) {
-      return DropdownMenuItem(
-        value: shift.code,
-        child: Text(shift.name),
-      );
-    }).toList();
+  String? _validatePassword(String? v) {
+    if ((v ?? '').length < 6) return LocaleKeys.staff_err_password_short.trnsltd;
+    return null;
   }
 
-  _getStaffStatus(List<AccountStatus> status) {
-    return status.map((status) {
-      return DropdownMenuItem(
-        value: status.code,
-        child: Text(status.name),
-      );
-    }).toList();
-  }
-
-  void _onConfirm(BuildContext context) {
-    final staffCubit = context.read<StaffCubit>();
-
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
 
-    // تأكد من اختيار User عند إنشاء موظف جديد
-    if (widget.staff == null && _selectedProfileUserId == null) {
-      // CustomToast.error(LocaleKeys.User_required.trnsltd);
+    final draft = StaffDraft(
+      fullName: _fullName.text.trim(),
+      phone: _phone.text.trim(),
+      position: _position,
+      permissions: _permissions,
+      email: _email.text.trim(),
+      password: _password.text,
+    );
+    final cubit = context.read<StaffCubit>();
+    final error = _isEdit
+        ? await cubit.update(widget.member!.id, draft)
+        : await cubit.create(draft);
+
+    if (!mounted) return;
+    if (error != null) {
+      setState(() {
+        _saving = false;
+        _error = error;
+      });
       return;
     }
 
-    final positionEnum = StaffPosition.values.firstWhere(
-      (e) => e.code == _position,
-    );
-    final shiftEnum = ShiftType.values.firstWhere((e) => e.code == _shift);
-
-    final statusEnum = AccountStatus.values.firstWhere(
-      (e) => e.code == _status,
-    );
-
-    debugPrint(statusEnum.name);
-
-    final userId = widget.staff == null
-        ? _selectedProfileUserId!
-        : widget.staff!.userId;
-
-    final model = StaffModel(
-      id: widget.staff?.id ?? "",
-      userId: userId,
-      fullName: _fullName.text,
-      email: _email.text,
-      phone: _phone.text,
-      position: positionEnum,
-      shiftType: shiftEnum,
-      status: statusEnum,
-      createdAt: widget.staff?.createdAt ?? DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-
-    widget.staff == null
-        ? staffCubit.createStaff(model)
-        : staffCubit.updateStaff(model);
-
     Navigator.pop(context);
+    SnackbarMes.showToastMsg(
+      context,
+      message: _isEdit
+          ? LocaleKeys.staff_saved.trnsltd
+          : LocaleKeys.staff_created.trnsltd,
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: colorScheme.primary),
+        const SizedBox(width: 8),
+        Text(
+          text,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ErrorBanner extends StatelessWidget {
+  const _ErrorBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.error.withOpacity(.1),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          Icon(HugeIcons.strokeRoundedAlert02, color: colorScheme.error, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(message, style: TextStyle(color: colorScheme.error)),
+          ),
+        ],
+      ),
+    );
   }
 }

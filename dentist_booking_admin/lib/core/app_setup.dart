@@ -1,5 +1,4 @@
 import 'package:dentist_booking_admin/features/booking/blocs/booking/booking_cubit.dart';
-import 'package:dentist_booking_admin/features/dashboard/blocs/dashboard/dashboard_cubit.dart';
 import 'package:dentist_booking_admin/features/patient/blocs/cubit/patient_cubit.dart';
 import 'package:dentist_booking_admin/features/queue/blocs/queue/queue_cubit.dart';
 import 'package:dentist_booking_admin/features/settings/blocs/settings/settings_cubit.dart';
@@ -15,11 +14,14 @@ import '../features/auth/repo/sign_in_repo.dart';
 import '../features/booking/blocs/booking_count/booking_count_cubit.dart';
 import '../features/booking/repo/booking_repo.dart';
 import '../features/booking/service/ticket_print_service.dart';
-import '../features/dashboard/repo/dashboard_repo.dart';
+import '../features/statistics/blocs/statistics_cubit.dart';
+import '../features/statistics/repo/statistics_repo.dart';
 import '../features/patient/repo/patient_repo.dart';
 import '../features/queue/repo/queue_repo.dart';
 import '../features/settings/repo/settings_repo.dart';
 import '../features/staff/repo/staff_repo.dart';
+import 'access/access_cubit.dart';
+import 'access/access_repo.dart';
 import 'blocs/theme/theme_cubit.dart';
 import 'services/session_service.dart';
 
@@ -48,6 +50,10 @@ Future<void> setUp() async {
   );
 
   getIt.registerFactory(() => ThemeCubit());
+
+  final accessRepo = AccessRepo(client: client);
+  getIt.registerLazySingleton<AccessRepo>(() => accessRepo);
+  getIt.registerFactory(() => AccessCubit(accessRepo: accessRepo));
 
   final staffRepo = StaffRepo(client: client);
   getIt.registerLazySingleton<StaffRepo>(() => staffRepo);
@@ -101,12 +107,10 @@ Future<void> setUp() async {
     () => TicketPrintService(settingsRepo: settingsRepo),
   );
 
-  final dashboardRepo = DashboardRepo(client: client);
-  getIt.registerLazySingleton<DashboardRepo>(() => dashboardRepo);
+  final statisticsRepo = StatisticsRepo(client: client);
+  getIt.registerLazySingleton<StatisticsRepo>(() => statisticsRepo);
   getIt.registerFactory(
-    () => DashboardCubit(
-      dashboardRepo: dashboardRepo,
-    ),
+    () => StatisticsCubit(statisticsRepo: statisticsRepo),
   );
 
   final queueRepo = QueueRepo(client: client);

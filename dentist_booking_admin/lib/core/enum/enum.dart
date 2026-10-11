@@ -79,15 +79,6 @@ enum StaffPosition {
   const StaffPosition(this.code);
 }
 
-enum ShiftType {
-  morning("morning"),
-  evening("evening"),
-  mixed("mixed");
-
-  final String code;
-  const ShiftType(this.code);
-}
-
 enum AccountStatus {
   active("active"),
   vacation("vacation"),
@@ -104,7 +95,7 @@ enum AccountStatus {
 }
 
 extension StaffPositionExt on StaffPosition {
-  String get name {
+  String get label {
     switch (this) {
       case StaffPosition.nurse:
         return LocaleKeys.pos_nurse.trnsltd;
@@ -199,19 +190,6 @@ extension AccountStatusMapper on String? {
     'appMaintenance' => Colors.yellow,
     _ => Colors.purple,
   };
-}
-
-extension ShiftTypeExt on ShiftType {
-  String get name {
-    switch (this) {
-      case ShiftType.morning:
-        return LocaleKeys.shift_morning.trnsltd;
-      case ShiftType.evening:
-        return LocaleKeys.shift_evening.trnsltd;
-      case ShiftType.mixed:
-        return LocaleKeys.shift_mixed.trnsltd;
-    }
-  }
 }
 
 extension AnnouncementAudienceExt on AnnouncementAudience {

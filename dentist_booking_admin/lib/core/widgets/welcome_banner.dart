@@ -10,6 +10,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import '../access/access_cubit.dart';
+import '../access/app_permission.dart';
 import '../app_setup.dart';
 import '../blocs/theme/theme_cubit.dart';
 import 'app_version_text.dart';
@@ -139,14 +141,15 @@ class WelcomeBanner extends StatelessWidget {
             ),
             const SizedBox(width: 10),
 
-            SizedBox(
-              width: context.mediaQuery.width * 0.25,
-              height: 120,
-              child: BlocProvider<QueueCubit>(
-                create: (context) => getIt<QueueCubit>()..loadStatus(),
-                child: QueueCardPro(),
+            if (context.watch<AccessCubit>().access.can(AppPermission.queue))
+              SizedBox(
+                width: context.mediaQuery.width * 0.25,
+                height: 120,
+                child: BlocProvider<QueueCubit>(
+                  create: (context) => getIt<QueueCubit>()..loadStatus(),
+                  child: QueueCardPro(),
+                ),
               ),
-            ),
             const SizedBox(width: 10),
             Column(
               mainAxisAlignment: MainAxisAlignment.center,

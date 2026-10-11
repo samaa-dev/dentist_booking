@@ -1,150 +1,86 @@
-import 'package:dentist_booking_admin/core/extensions/os_extensions.dart';
-import 'package:dentist_booking_admin/generated/locale_keys.g.dart';
-import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../../core/app_setup.dart';
+import '../../../../core/extensions/os_extensions.dart';
+import '../../../../core/model/staff_member.dart';
 import '../../../../core/services/session_service.dart';
-import '../../../../core/model/profile_model.dart';
-import '../../../../core/model/staff_model.dart';
+import '../../../../generated/locale_keys.g.dart';
 import '../../repo/staff_repo.dart';
 
-part 'staff_cubit.freezed.dart';
-part 'staff_state.dart';
+sealed class StaffState {
+  const StaffState();
+}
 
+class StaffLoading extends StaffState {
+  const StaffLoading();
+}
+
+class StaffLoaded extends StaffState {
+  const StaffLoaded(this.members);
+  final List<StaffMember> members;
+}
+
+class StaffError extends StaffState {
+  const StaffError(this.message);
+  final String message;
+}
+
+/// Staff management (admin only). Each action returns `null` on success or a
+/// translated error message, so dialogs can show the error in place.
 class StaffCubit extends Cubit<StaffState> {
-  final StaffRepo _staffRepo;
-
   StaffCubit({required StaffRepo staffRepo})
     : _staffRepo = staffRepo,
-      super(const StaffState.loading());
+      super(const StaffLoading());
 
-  /// 📌 Load all profiles
-  Future<void> getAllProfile() async {
-    emit(const StaffState.loadingProfile());
+  final StaffRepo _staffRepo;
+
+  Future<void> load({bool showLoading = true}) async {
+    if (showLoading) emit(const StaffLoading());
     try {
-      final profileList = await _staffRepo.getAllProfiles();
-
-      emit(StaffState.loadedProfile(profileList));
+      final members = await _staffRepo.getStaff();
+      if (!isClosed) emit(StaffLoaded(members));
     } catch (e) {
       if (getIt<SessionService>().handleIfExpired(e)) return;
-      debugPrint('Error loading profiles: $e');
-      emit(StaffState.errorProfile(LocaleKeys.profile_error_load.trnsltd));
+      if (!isClosed) emit(StaffError(LocaleKeys.staff_error_load.trnsltd));
     }
   }
 
-  /// 📌 Load all staff
-  Future<void> fetchStaff() async {
-    emit(const StaffState.loading());
+  Future<String?> create(StaffDraft draft) =>
+      _run(() => _staffRepo.createStaff(draft));
+
+  Future<String?> update(String id, StaffDraft draft) =>
+      _run(() => _staffRepo.updateStaff(id, draft));
+
+  Future<String?> setActive(String id, {required bool active}) =>
+      _run(() => _staffRepo.setActive(id, active: active));
+
+  Future<String?> setPassword(String userId, String password) =>
+      _run(() => _staffRepo.setPassword(userId, password), reload: false);
+
+  Future<String?> delete(String id) => _run(() => _staffRepo.deleteStaff(id));
+
+  Future<String?> _run(Future<void> Function() action, {bool reload = true}) async {
     try {
-      final staffList = await _staffRepo.getAllStaff();
-
-      debugPrint('Staff list: $staffList');
-
-      emit(StaffState.loaded(staffList));
+      await action();
+      if (reload) await load(showLoading: false);
+      return null;
     } catch (e) {
-      if (getIt<SessionService>().handleIfExpired(e)) return;
-      debugPrint('Error loading staff: $e');
-      emit(StaffState.error(LocaleKeys.staff_error_load.trnsltd));
+      if (getIt<SessionService>().handleIfExpired(e)) return null;
+      return _messageFor(e);
     }
   }
 
-  /// 📌 Add create staff
-  Future<void> createStaff(StaffModel staff) async {
-    try {
-      await _staffRepo.createStaff(staff);
-
-      // إعادة تحميل القائمة بالكامل
-      final list = await _staffRepo.getAllStaff();
-      emit(StaffState.loaded(list));
-    } catch (e) {
-      if (getIt<SessionService>().handleIfExpired(e)) return;
-      debugPrint('Create staff error: $e');
-      emit(StaffState.errorAddStaff(LocaleKeys.staff_error_create.trnsltd));
-    }
-  }
-
-  /// 📌 Update staff
-  Future<void> updateStaff(StaffModel updatedStaff) async {
-    try {
-      final newStaff = await _staffRepo.updateStaff(updatedStaff);
-
-      final currentList = state.maybeWhen(
-        loaded: (list) => list,
-        orElse: () => <StaffModel>[],
-      );
-
-      final updatedList = currentList.map((s) {
-        return s.id == newStaff.id ? newStaff : s;
-      }).toList();
-
-      emit(StaffState.loaded(updatedList));
-    } catch (e) {
-      if (getIt<SessionService>().handleIfExpired(e)) return;
-      debugPrint('Error updating staff: $e');
-      emit(StaffState.errorUpdateStaff(LocaleKeys.staff_error_update.trnsltd));
-    }
-  }
-
-  /// 📌 Delete staff
-  Future<void> deleteStaff(String staffId) async {
-    try {
-      await _staffRepo.deleteStaff(staffId);
-
-      final currentList = state.maybeWhen(
-        loaded: (list) => list,
-        orElse: () => <StaffModel>[],
-      );
-
-      final updatedList = currentList.where((s) => s.id != staffId).toList();
-
-      emit(StaffState.loaded(updatedList));
-    } catch (e) {
-      if (getIt<SessionService>().handleIfExpired(e)) return;
-      debugPrint('Error deleting staff: $e');
-      emit(StaffState.errorUpdateStaff(LocaleKeys.staff_error_delete.trnsltd));
-    }
-  }
-
-  /// 📌 Change password of staff
-  Future<void> changePassword({
-    required String staffId,
-    required String fullName,
-    required String newPassword,
-  }) async {
-    try {
-      final success = await _staffRepo.changePassword(
-        newPassword: newPassword,
-        staffId: staffId,
-      );
-
-      if (success) {
-        emit(
-          StaffState.successChangePasswordStaff(
-            LocaleKeys.staff_success_change_password.tr(
-              namedArgs: {
-                'name': fullName,
-              },
-            ),
-          ),
-        );
-      } else {
-        emit(
-          StaffState.errorChangePasswordStaff(
-            LocaleKeys.staff_error_change_password.trnsltd,
-          ),
-        );
-      }
-    } catch (e) {
-      if (getIt<SessionService>().handleIfExpired(e)) return;
-      debugPrint('Error changing password: $e');
-      emit(
-        StaffState.errorChangePasswordStaff(
-          LocaleKeys.staff_error_change_password.trnsltd,
-        ),
-      );
-    }
+  static String _messageFor(Object e) {
+    final code = e is StaffActionException ? e.code : 'unknown';
+    return switch (code) {
+      'invalid_email' => LocaleKeys.staff_err_invalid_email.trnsltd,
+      'password_too_short' => LocaleKeys.staff_err_password_short.trnsltd,
+      'full_name_required' => LocaleKeys.required_field.trnsltd,
+      'email_in_use' => LocaleKeys.staff_err_email_in_use.trnsltd,
+      'already_staff' => LocaleKeys.staff_err_already_staff.trnsltd,
+      'forbidden' => LocaleKeys.staff_err_forbidden.trnsltd,
+      'staff_not_found' => LocaleKeys.staff_err_not_found.trnsltd,
+      _ => LocaleKeys.staff_err_unknown.trnsltd,
+    };
   }
 }

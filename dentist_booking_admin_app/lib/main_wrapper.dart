@@ -11,6 +11,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'core/access/access_cubit.dart';
+import 'core/access/app_permission.dart';
+import 'core/access/user_access.dart';
 import 'core/app_setup.dart';
 import 'features/auth/blocs/auth/auth_cubit.dart';
 
@@ -22,47 +25,58 @@ class MainWrapper extends StatelessWidget {
 
   final UserRole userRole;
 
-  bool get _canAccessSettings =>
-      userRole == UserRole.admin || userRole == UserRole.doctor;
-
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => getIt<PagesCubit>()),
         BlocProvider.value(value: context.read<AuthCubit>()),
+        BlocProvider(
+          create: (_) => getIt<AccessCubit>()..load(fallbackRole: userRole),
+        ),
       ],
-      child: _MainShell(
-        canAccessSettings: _canAccessSettings,
+      child: BlocBuilder<AccessCubit, AccessState>(
+        builder: (context, state) => switch (state) {
+          AccessLoading() => const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          ),
+          _ => _MainShell(access: context.read<AccessCubit>().access),
+        },
       ),
     );
   }
 }
 
 class _MainShell extends StatelessWidget {
-  const _MainShell({required this.canAccessSettings});
+  const _MainShell({required this.access});
 
-  final bool canAccessSettings;
+  final UserAccess access;
 
   @override
   Widget build(BuildContext context) {
+    final canQueue = access.can(AppPermission.queue);
+    final canBookings = access.can(AppPermission.bookings);
+    final canSettings = access.can(AppPermission.settings);
+
     final pages = <Widget>[
-      const HomeScreen(),
-      const BookingScreen(),
-      if (canAccessSettings) const SettingsScreen(),
+      if (canQueue) const HomeScreen(),
+      if (canBookings) const BookingScreen(),
+      if (canSettings) const SettingsScreen(),
       const ProfileScreen(),
     ];
 
     final destinations = <NavigationDestination>[
-      NavigationDestination(
-        icon: const Icon(HugeIcons.strokeRoundedDashboardCircle),
-        label: LocaleKeys.Dashboard.trnsltd,
-      ),
-      NavigationDestination(
-        icon: const Icon(HugeIcons.strokeRoundedAddToList),
-        label: LocaleKeys.Reservations.trnsltd,
-      ),
-      if (canAccessSettings)
+      if (canQueue)
+        NavigationDestination(
+          icon: const Icon(HugeIcons.strokeRoundedDashboardCircle),
+          label: LocaleKeys.Dashboard.trnsltd,
+        ),
+      if (canBookings)
+        NavigationDestination(
+          icon: const Icon(HugeIcons.strokeRoundedAddToList),
+          label: LocaleKeys.Reservations.trnsltd,
+        ),
+      if (canSettings)
         NavigationDestination(
           icon: const Icon(HugeIcons.strokeRoundedSettings01),
           label: LocaleKeys.Settings.trnsltd,
