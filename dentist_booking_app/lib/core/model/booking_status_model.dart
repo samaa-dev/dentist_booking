@@ -25,7 +25,15 @@ abstract class BookingStatusModel with _$BookingStatusModel {
     @JsonKey(name: 'evening_available') bool? eveningAvailable,
     /// Clinic morning booking open time as HH:MM (from get_booking_status).
     @JsonKey(name: 'booking_morning_start_time') String? bookingMorningStartTime,
+    /// Clinic wall-clock time when booking next opens (ISO, no timezone);
+    /// null while booking is open or when no working day is configured.
+    @JsonKey(name: 'next_open_at') String? nextOpenAt,
+    /// Days from the clinic's today to [nextOpenAt] (0 = today, 1 = tomorrow).
+    @JsonKey(name: 'next_open_in_days') int? nextOpenInDays,
   }) = _$BookingStatusModelImpl;
+
+  DateTime? get nextOpenDateTime =>
+      nextOpenAt == null ? null : DateTime.tryParse(nextOpenAt!);
 
   factory BookingStatusModel.fromJson(Map<String, dynamic> json) =>
       _$BookingStatusModelFromJson(json);

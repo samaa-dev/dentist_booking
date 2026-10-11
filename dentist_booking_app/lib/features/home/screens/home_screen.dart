@@ -108,6 +108,7 @@ class _QueueCubitLifecycleState extends State<_QueueCubitLifecycle>
     if (state != AppLifecycleState.resumed) return;
     if (!mounted) return;
     context.read<QueueCubit>().onAppResumed();
+    context.read<BookingStatusCubit>().loadStatus(showLoading: false);
   }
 
   @override

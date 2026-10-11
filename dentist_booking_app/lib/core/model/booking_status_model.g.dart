@@ -21,6 +21,8 @@ _$BookingStatusModelImpl _$$BookingStatusModelImplFromJson(
   morningAvailable: json['morning_available'] as bool?,
   eveningAvailable: json['evening_available'] as bool?,
   bookingMorningStartTime: json['booking_morning_start_time'] as String?,
+  nextOpenAt: json['next_open_at'] as String?,
+  nextOpenInDays: (json['next_open_in_days'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$$BookingStatusModelImplToJson(
@@ -38,6 +40,8 @@ Map<String, dynamic> _$$BookingStatusModelImplToJson(
   'morning_available': instance.morningAvailable,
   'evening_available': instance.eveningAvailable,
   'booking_morning_start_time': instance.bookingMorningStartTime,
+  'next_open_at': instance.nextOpenAt,
+  'next_open_in_days': instance.nextOpenInDays,
 };
 
 const _$BookingShiftEnumMap = {

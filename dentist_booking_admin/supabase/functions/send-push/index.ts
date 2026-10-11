@@ -10,6 +10,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 type NotificationJob = {
   id: string
+  created_at: string
   user_id: string
   booking_id: string | null
   kind: 'booking_confirmed' | 'position_update' | 'your_turn'
@@ -46,7 +47,50 @@ function getServiceAccount(): ServiceAccount {
   if (!raw) {
     throw new Error('FIREBASE_SERVICE_ACCOUNT secret is not set')
   }
-  return JSON.parse(raw) as ServiceAccount
+  const sa = JSON.parse(raw) as ServiceAccount
+  // Keys pasted through shells/dashboards often keep literal backslash-n sequences.
+  sa.private_key = sa.private_key?.replace(/\\n/g, '\n')
+  if (!sa.project_id || !sa.client_email || !sa.private_key) {
+    throw new Error('FIREBASE_SERVICE_ACCOUNT is missing project_id/client_email/private_key')
+  }
+  return sa
+}
+
+// Queue updates are only useful while fresh; older jobs are dropped, not sent.
+const JOB_MAX_AGE_MS = 30 * 60 * 1000
+// Pending jobs older than this are retried by any later invocation.
+const STALE_PENDING_MS = 60 * 1000
+
+/** Atomically moves jobs pending -> processing; returns only the ones we own. */
+async function claimJobs(
+  supabase: ReturnType<typeof createClient>,
+  ids: string[],
+): Promise<NotificationJob[]> {
+  if (ids.length === 0) return []
+  const { data, error } = await supabase
+    .from('notification_jobs')
+    .update({ status: 'processing' })
+    .in('id', ids)
+    .eq('status', 'pending')
+    .select('*')
+  if (error) throw error
+  return (data ?? []) as NotificationJob[]
+}
+
+async function pendingJobIds(
+  supabase: ReturnType<typeof createClient>,
+  olderThanMs: number,
+  limit: number,
+): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('notification_jobs')
+    .select('id')
+    .eq('status', 'pending')
+    .lte('created_at', new Date(Date.now() - olderThanMs).toISOString())
+    .order('created_at', { ascending: true })
+    .limit(limit)
+  if (error) throw error
+  return (data ?? []).map((row: { id: string }) => row.id)
 }
 
 async function getFcmAccessToken(sa: ServiceAccount): Promise<string> {
@@ -117,10 +161,8 @@ async function sendFcmMessage(
   const resBody = await res.json().catch(() => ({}))
   const errorCode = (resBody as { error?: { details?: Array<{ errorCode?: string }> } })
     ?.error?.details?.[0]?.errorCode
-  const unregistered =
-    res.status === 404 ||
-    errorCode === 'UNREGISTERED' ||
-    errorCode === 'INVALID_ARGUMENT'
+  // Only drop tokens FCM reports as dead; INVALID_ARGUMENT can be a payload bug.
+  const unregistered = res.status === 404 || errorCode === 'UNREGISTERED'
 
   return {
     ok: res.ok,
@@ -158,35 +200,45 @@ Deno.serve(async (req) => {
   try {
     assertAuthorized(req)
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    const payload = (await req.json().catch(() => ({}))) as WebhookPayload
+
+    const ids: string[] = []
+    if (payload.record?.id) {
+      ids.push(payload.record.id)
+    } else if (payload.job_id) {
+      ids.push(payload.job_id)
+    }
+    // Every call also sweeps jobs left pending by earlier failures.
+    const sweepAge = payload.process_pending ? 0 : STALE_PENDING_MS
+    for (const id of await pendingJobIds(supabase, sweepAge, 50)) {
+      if (!ids.includes(id)) ids.push(id)
+    }
+
+    if (ids.length === 0) {
+      return Response.json({ success: true, processed: 0 })
+    }
+
+    // Fail before claiming so jobs stay pending if Firebase credentials are broken.
     const sa = getServiceAccount()
     const accessToken = await getFcmAccessToken(sa)
 
-    const payload = (await req.json().catch(() => ({}))) as WebhookPayload
+    const claimed = await claimJobs(supabase, ids)
     const jobs: NotificationJob[] = []
-
-    if (payload.record?.id) {
-      jobs.push(payload.record)
-    } else if (payload.job_id) {
-      const { data, error } = await supabase
-        .from('notification_jobs')
-        .select('*')
-        .eq('id', payload.job_id)
-        .maybeSingle()
-      if (error) throw error
-      if (data) jobs.push(data as NotificationJob)
-    } else if (payload.process_pending) {
-      const { data, error } = await supabase
-        .from('notification_jobs')
-        .select('*')
-        .eq('status', 'pending')
-        .order('created_at', { ascending: true })
-        .limit(50)
-      if (error) throw error
-      if (data) jobs.push(...(data as NotificationJob[]))
+    let expired = 0
+    for (const job of claimed) {
+      if (Date.now() - new Date(job.created_at).getTime() > JOB_MAX_AGE_MS) {
+        await supabase
+          .from('notification_jobs')
+          .update({ status: 'failed', error_message: 'expired', sent_at: new Date().toISOString() })
+          .eq('id', job.id)
+        expired++
+      } else {
+        jobs.push(job)
+      }
     }
 
     if (jobs.length === 0) {
-      return Response.json({ success: true, processed: 0 })
+      return Response.json({ success: true, processed: 0, expired })
     }
 
     let sent = 0
@@ -271,7 +323,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return Response.json({ success: true, processed: jobs.length, sent, failed })
+    return Response.json({ success: true, processed: jobs.length, sent, failed, expired })
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     console.error('send-push error:', message)

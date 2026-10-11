@@ -75,6 +75,7 @@ class BookingCreateRepo {
           _mapReasonToMessage(
             reason.toString(),
             message is Map ? Map<String, dynamic>.from(message) : null,
+            allowedStart: response['allowed_start']?.toString(),
           ),
         );
       }
@@ -112,7 +113,13 @@ class BookingCreateRepo {
     };
   }
 
-  String _mapReasonToMessage(String reason, Map<String, dynamic>? message) {
+  String _mapReasonToMessage(
+    String reason,
+    Map<String, dynamic>? message, {
+    String? allowedStart,
+  }) {
+    final openingTime =
+        allowedStart ?? message?['allowed_start']?.toString() ?? '';
     switch (reason) {
       case "day_not_exist":
         return LocaleKeys.day_not_exist.trnsltd;
@@ -127,16 +134,15 @@ class BookingCreateRepo {
       case "invalid_working_hours":
         return LocaleKeys.invalid_working_hours.trnsltd;
       case 'too_early_morning':
-        final allowedStart = message?['allowed_start']?.toString() ?? '';
         return LocaleKeys.too_early_morning.tr(
-          namedArgs: {
-            'allowed_start': allowedStart,
-          },
+          namedArgs: {'time': openingTime},
         );
       case 'too_late_morning':
         return LocaleKeys.too_late_morning.trnsltd;
       case "too_early_evening":
-        return LocaleKeys.too_early_evening.trnsltd;
+        return LocaleKeys.too_early_evening.tr(
+          namedArgs: {'time': openingTime},
+        );
       case "too_late_evening":
         return LocaleKeys.too_late_evening.trnsltd;
       case "morning_full":

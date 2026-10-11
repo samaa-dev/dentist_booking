@@ -157,28 +157,37 @@ class _BookingStatusPanelLayout extends StatelessWidget {
       capacityNotice = null;
     }
 
-    final String stoppedSubtitle;
+    // Why booking is closed right now (server only flags shifts whose
+    // booking window is active), followed by when it opens next.
+    final String? closedReason;
     if (status.shiftClosed == BookingShift.morning &&
         !status.isShiftAvailable(BookingShift.evening)) {
-      stoppedSubtitle = LocaleKeys.morning_shift_closed_today.trnsltd;
+      closedReason = LocaleKeys.morning_shift_closed_today.trnsltd;
     } else if (status.shiftClosed == BookingShift.evening &&
         !status.isShiftAvailable(BookingShift.morning)) {
-      stoppedSubtitle = LocaleKeys.evening_shift_closed_today.trnsltd;
-    } else if (morningFull && eveningFull) {
-      stoppedSubtitle = LocaleKeys.evening_full.trnsltd;
-    } else if (morningFull && !hasBookableShift) {
-      stoppedSubtitle = LocaleKeys.morning_full.trnsltd;
-    } else if (eveningFull && !hasBookableShift) {
-      stoppedSubtitle = LocaleKeys.evening_full.trnsltd;
+      closedReason = LocaleKeys.evening_shift_closed_today.trnsltd;
+    } else if (status.shiftFull != null && morningFull && eveningFull) {
+      closedReason = LocaleKeys.evening_full.trnsltd;
+    } else if (status.shiftFull == BookingShift.morning) {
+      closedReason = LocaleKeys.morning_full.trnsltd;
+    } else if (status.shiftFull == BookingShift.evening) {
+      closedReason = LocaleKeys.evening_full.trnsltd;
     } else {
+      closedReason = null;
+    }
+
+    final String? opensText = _nextOpeningText(status);
+    final String stoppedSubtitle;
+    if (closedReason != null || opensText != null) {
+      stoppedSubtitle = [closedReason, opensText].whereType<String>().join('\n');
+    } else {
+      // Older server without next_open_at.
       final openAt = status.bookingMorningStartTime?.trim();
-      if (openAt != null && openAt.isNotEmpty) {
-        stoppedSubtitle = LocaleKeys.booking_closed_opens_morning.tr(
-          namedArgs: {'time': openAt},
-        );
-      } else {
-        stoppedSubtitle = LocaleKeys.booking_closed_now.trnsltd;
-      }
+      stoppedSubtitle = (openAt != null && openAt.isNotEmpty)
+          ? LocaleKeys.booking_closed_opens_morning.tr(
+              namedArgs: {'time': openAt},
+            )
+          : LocaleKeys.booking_closed_now.trnsltd;
     }
 
     return TweenAnimationBuilder<double>(
@@ -328,6 +337,41 @@ class _BookingStatusPanelLayout extends StatelessWidget {
       ),
     );
   }
+}
+
+/// "Opens today/tomorrow/on Saturday at 07:30" from the server's next_open_at.
+String? _nextOpeningText(BookingStatusModel status) {
+  final next = status.nextOpenDateTime;
+  if (next == null) return null;
+
+  final time =
+      '${next.hour.toString().padLeft(2, '0')}:${next.minute.toString().padLeft(2, '0')}';
+  final inDays = status.nextOpenInDays;
+
+  if (inDays == 0) {
+    return LocaleKeys.booking_opens_today_at.tr(namedArgs: {'time': time});
+  }
+  if (inDays == 1) {
+    return LocaleKeys.booking_opens_tomorrow_at.tr(namedArgs: {'time': time});
+  }
+
+  const weekdayKeys = {
+    DateTime.monday: LocaleKeys.monday,
+    DateTime.tuesday: LocaleKeys.tuesday,
+    DateTime.wednesday: LocaleKeys.wednesday,
+    DateTime.thursday: LocaleKeys.thursday,
+    DateTime.friday: LocaleKeys.friday,
+    DateTime.saturday: LocaleKeys.saturday,
+    DateTime.sunday: LocaleKeys.sunday,
+  };
+  var day = weekdayKeys[next.weekday]!.trnsltd;
+  // Beyond a week the weekday alone is ambiguous.
+  if (inDays != null && inDays > 6) {
+    day = '$day ${next.day}/${next.month}';
+  }
+  return LocaleKeys.booking_opens_on_day_at.tr(
+    namedArgs: {'day': day, 'time': time},
+  );
 }
 
 class _BookingPanelRefreshButton extends StatefulWidget {

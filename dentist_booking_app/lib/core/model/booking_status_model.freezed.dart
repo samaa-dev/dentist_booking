@@ -25,7 +25,10 @@ mixin _$BookingStatusModel {
 @JsonKey(name: 'is_open') bool? get isOpen;@JsonKey(name: 'shift') BookingShift? get shift;@JsonKey(name: 'time_left') int? get timeLeft;@JsonKey(name: 'is_booking_enabled') bool? get isBookingEnabled;@JsonKey(name: 'stop_reason') String? get stopReason;/// When set, the current clock window's shift is closed for booking.
 @JsonKey(name: 'shift_closed') BookingShift? get shiftClosed;/// Legacy: set only when no remaining bookable shift (blocks old clients).
 @JsonKey(name: 'shift_full') BookingShift? get shiftFull;@JsonKey(name: 'morning_full') bool? get morningFull;@JsonKey(name: 'evening_full') bool? get eveningFull;@JsonKey(name: 'morning_available') bool? get morningAvailable;@JsonKey(name: 'evening_available') bool? get eveningAvailable;/// Clinic morning booking open time as HH:MM (from get_booking_status).
-@JsonKey(name: 'booking_morning_start_time') String? get bookingMorningStartTime;
+@JsonKey(name: 'booking_morning_start_time') String? get bookingMorningStartTime;/// Clinic wall-clock time when booking next opens (ISO, no timezone);
+/// null while booking is open or when no working day is configured.
+@JsonKey(name: 'next_open_at') String? get nextOpenAt;/// Days from the clinic's today to [nextOpenAt] (0 = today, 1 = tomorrow).
+@JsonKey(name: 'next_open_in_days') int? get nextOpenInDays;
 /// Create a copy of BookingStatusModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -38,16 +41,16 @@ $BookingStatusModelCopyWith<BookingStatusModel> get copyWith => _$BookingStatusM
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is BookingStatusModel&&(identical(other.isOpen, isOpen) || other.isOpen == isOpen)&&(identical(other.shift, shift) || other.shift == shift)&&(identical(other.timeLeft, timeLeft) || other.timeLeft == timeLeft)&&(identical(other.isBookingEnabled, isBookingEnabled) || other.isBookingEnabled == isBookingEnabled)&&(identical(other.stopReason, stopReason) || other.stopReason == stopReason)&&(identical(other.shiftClosed, shiftClosed) || other.shiftClosed == shiftClosed)&&(identical(other.shiftFull, shiftFull) || other.shiftFull == shiftFull)&&(identical(other.morningFull, morningFull) || other.morningFull == morningFull)&&(identical(other.eveningFull, eveningFull) || other.eveningFull == eveningFull)&&(identical(other.morningAvailable, morningAvailable) || other.morningAvailable == morningAvailable)&&(identical(other.eveningAvailable, eveningAvailable) || other.eveningAvailable == eveningAvailable)&&(identical(other.bookingMorningStartTime, bookingMorningStartTime) || other.bookingMorningStartTime == bookingMorningStartTime));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is BookingStatusModel&&(identical(other.isOpen, isOpen) || other.isOpen == isOpen)&&(identical(other.shift, shift) || other.shift == shift)&&(identical(other.timeLeft, timeLeft) || other.timeLeft == timeLeft)&&(identical(other.isBookingEnabled, isBookingEnabled) || other.isBookingEnabled == isBookingEnabled)&&(identical(other.stopReason, stopReason) || other.stopReason == stopReason)&&(identical(other.shiftClosed, shiftClosed) || other.shiftClosed == shiftClosed)&&(identical(other.shiftFull, shiftFull) || other.shiftFull == shiftFull)&&(identical(other.morningFull, morningFull) || other.morningFull == morningFull)&&(identical(other.eveningFull, eveningFull) || other.eveningFull == eveningFull)&&(identical(other.morningAvailable, morningAvailable) || other.morningAvailable == morningAvailable)&&(identical(other.eveningAvailable, eveningAvailable) || other.eveningAvailable == eveningAvailable)&&(identical(other.bookingMorningStartTime, bookingMorningStartTime) || other.bookingMorningStartTime == bookingMorningStartTime)&&(identical(other.nextOpenAt, nextOpenAt) || other.nextOpenAt == nextOpenAt)&&(identical(other.nextOpenInDays, nextOpenInDays) || other.nextOpenInDays == nextOpenInDays));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,isOpen,shift,timeLeft,isBookingEnabled,stopReason,shiftClosed,shiftFull,morningFull,eveningFull,morningAvailable,eveningAvailable,bookingMorningStartTime);
+int get hashCode => Object.hash(runtimeType,isOpen,shift,timeLeft,isBookingEnabled,stopReason,shiftClosed,shiftFull,morningFull,eveningFull,morningAvailable,eveningAvailable,bookingMorningStartTime,nextOpenAt,nextOpenInDays);
 
 @override
 String toString() {
-  return 'BookingStatusModel(isOpen: $isOpen, shift: $shift, timeLeft: $timeLeft, isBookingEnabled: $isBookingEnabled, stopReason: $stopReason, shiftClosed: $shiftClosed, shiftFull: $shiftFull, morningFull: $morningFull, eveningFull: $eveningFull, morningAvailable: $morningAvailable, eveningAvailable: $eveningAvailable, bookingMorningStartTime: $bookingMorningStartTime)';
+  return 'BookingStatusModel(isOpen: $isOpen, shift: $shift, timeLeft: $timeLeft, isBookingEnabled: $isBookingEnabled, stopReason: $stopReason, shiftClosed: $shiftClosed, shiftFull: $shiftFull, morningFull: $morningFull, eveningFull: $eveningFull, morningAvailable: $morningAvailable, eveningAvailable: $eveningAvailable, bookingMorningStartTime: $bookingMorningStartTime, nextOpenAt: $nextOpenAt, nextOpenInDays: $nextOpenInDays)';
 }
 
 
@@ -58,7 +61,7 @@ abstract mixin class $BookingStatusModelCopyWith<$Res>  {
   factory $BookingStatusModelCopyWith(BookingStatusModel value, $Res Function(BookingStatusModel) _then) = _$BookingStatusModelCopyWithImpl;
 @useResult
 $Res call({
-@JsonKey(name: 'is_open') bool? isOpen,@JsonKey(name: 'shift') BookingShift? shift,@JsonKey(name: 'time_left') int? timeLeft,@JsonKey(name: 'is_booking_enabled') bool? isBookingEnabled,@JsonKey(name: 'stop_reason') String? stopReason,@JsonKey(name: 'shift_closed') BookingShift? shiftClosed,@JsonKey(name: 'shift_full') BookingShift? shiftFull,@JsonKey(name: 'morning_full') bool? morningFull,@JsonKey(name: 'evening_full') bool? eveningFull,@JsonKey(name: 'morning_available') bool? morningAvailable,@JsonKey(name: 'evening_available') bool? eveningAvailable,@JsonKey(name: 'booking_morning_start_time') String? bookingMorningStartTime
+@JsonKey(name: 'is_open') bool? isOpen,@JsonKey(name: 'shift') BookingShift? shift,@JsonKey(name: 'time_left') int? timeLeft,@JsonKey(name: 'is_booking_enabled') bool? isBookingEnabled,@JsonKey(name: 'stop_reason') String? stopReason,@JsonKey(name: 'shift_closed') BookingShift? shiftClosed,@JsonKey(name: 'shift_full') BookingShift? shiftFull,@JsonKey(name: 'morning_full') bool? morningFull,@JsonKey(name: 'evening_full') bool? eveningFull,@JsonKey(name: 'morning_available') bool? morningAvailable,@JsonKey(name: 'evening_available') bool? eveningAvailable,@JsonKey(name: 'booking_morning_start_time') String? bookingMorningStartTime,@JsonKey(name: 'next_open_at') String? nextOpenAt,@JsonKey(name: 'next_open_in_days') int? nextOpenInDays
 });
 
 
@@ -75,7 +78,7 @@ class _$BookingStatusModelCopyWithImpl<$Res>
 
 /// Create a copy of BookingStatusModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? isOpen = freezed,Object? shift = freezed,Object? timeLeft = freezed,Object? isBookingEnabled = freezed,Object? stopReason = freezed,Object? shiftClosed = freezed,Object? shiftFull = freezed,Object? morningFull = freezed,Object? eveningFull = freezed,Object? morningAvailable = freezed,Object? eveningAvailable = freezed,Object? bookingMorningStartTime = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? isOpen = freezed,Object? shift = freezed,Object? timeLeft = freezed,Object? isBookingEnabled = freezed,Object? stopReason = freezed,Object? shiftClosed = freezed,Object? shiftFull = freezed,Object? morningFull = freezed,Object? eveningFull = freezed,Object? morningAvailable = freezed,Object? eveningAvailable = freezed,Object? bookingMorningStartTime = freezed,Object? nextOpenAt = freezed,Object? nextOpenInDays = freezed,}) {
   return _then(_self.copyWith(
 isOpen: freezed == isOpen ? _self.isOpen : isOpen // ignore: cast_nullable_to_non_nullable
 as bool?,shift: freezed == shift ? _self.shift : shift // ignore: cast_nullable_to_non_nullable
@@ -89,7 +92,9 @@ as bool?,eveningFull: freezed == eveningFull ? _self.eveningFull : eveningFull /
 as bool?,morningAvailable: freezed == morningAvailable ? _self.morningAvailable : morningAvailable // ignore: cast_nullable_to_non_nullable
 as bool?,eveningAvailable: freezed == eveningAvailable ? _self.eveningAvailable : eveningAvailable // ignore: cast_nullable_to_non_nullable
 as bool?,bookingMorningStartTime: freezed == bookingMorningStartTime ? _self.bookingMorningStartTime : bookingMorningStartTime // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,nextOpenAt: freezed == nextOpenAt ? _self.nextOpenAt : nextOpenAt // ignore: cast_nullable_to_non_nullable
+as String?,nextOpenInDays: freezed == nextOpenInDays ? _self.nextOpenInDays : nextOpenInDays // ignore: cast_nullable_to_non_nullable
+as int?,
   ));
 }
 
@@ -174,10 +179,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'is_open')  bool? isOpen, @JsonKey(name: 'shift')  BookingShift? shift, @JsonKey(name: 'time_left')  int? timeLeft, @JsonKey(name: 'is_booking_enabled')  bool? isBookingEnabled, @JsonKey(name: 'stop_reason')  String? stopReason, @JsonKey(name: 'shift_closed')  BookingShift? shiftClosed, @JsonKey(name: 'shift_full')  BookingShift? shiftFull, @JsonKey(name: 'morning_full')  bool? morningFull, @JsonKey(name: 'evening_full')  bool? eveningFull, @JsonKey(name: 'morning_available')  bool? morningAvailable, @JsonKey(name: 'evening_available')  bool? eveningAvailable, @JsonKey(name: 'booking_morning_start_time')  String? bookingMorningStartTime)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'is_open')  bool? isOpen, @JsonKey(name: 'shift')  BookingShift? shift, @JsonKey(name: 'time_left')  int? timeLeft, @JsonKey(name: 'is_booking_enabled')  bool? isBookingEnabled, @JsonKey(name: 'stop_reason')  String? stopReason, @JsonKey(name: 'shift_closed')  BookingShift? shiftClosed, @JsonKey(name: 'shift_full')  BookingShift? shiftFull, @JsonKey(name: 'morning_full')  bool? morningFull, @JsonKey(name: 'evening_full')  bool? eveningFull, @JsonKey(name: 'morning_available')  bool? morningAvailable, @JsonKey(name: 'evening_available')  bool? eveningAvailable, @JsonKey(name: 'booking_morning_start_time')  String? bookingMorningStartTime, @JsonKey(name: 'next_open_at')  String? nextOpenAt, @JsonKey(name: 'next_open_in_days')  int? nextOpenInDays)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _$BookingStatusModelImpl() when $default != null:
-return $default(_that.isOpen,_that.shift,_that.timeLeft,_that.isBookingEnabled,_that.stopReason,_that.shiftClosed,_that.shiftFull,_that.morningFull,_that.eveningFull,_that.morningAvailable,_that.eveningAvailable,_that.bookingMorningStartTime);case _:
+return $default(_that.isOpen,_that.shift,_that.timeLeft,_that.isBookingEnabled,_that.stopReason,_that.shiftClosed,_that.shiftFull,_that.morningFull,_that.eveningFull,_that.morningAvailable,_that.eveningAvailable,_that.bookingMorningStartTime,_that.nextOpenAt,_that.nextOpenInDays);case _:
   return orElse();
 
 }
@@ -195,10 +200,10 @@ return $default(_that.isOpen,_that.shift,_that.timeLeft,_that.isBookingEnabled,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'is_open')  bool? isOpen, @JsonKey(name: 'shift')  BookingShift? shift, @JsonKey(name: 'time_left')  int? timeLeft, @JsonKey(name: 'is_booking_enabled')  bool? isBookingEnabled, @JsonKey(name: 'stop_reason')  String? stopReason, @JsonKey(name: 'shift_closed')  BookingShift? shiftClosed, @JsonKey(name: 'shift_full')  BookingShift? shiftFull, @JsonKey(name: 'morning_full')  bool? morningFull, @JsonKey(name: 'evening_full')  bool? eveningFull, @JsonKey(name: 'morning_available')  bool? morningAvailable, @JsonKey(name: 'evening_available')  bool? eveningAvailable, @JsonKey(name: 'booking_morning_start_time')  String? bookingMorningStartTime)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'is_open')  bool? isOpen, @JsonKey(name: 'shift')  BookingShift? shift, @JsonKey(name: 'time_left')  int? timeLeft, @JsonKey(name: 'is_booking_enabled')  bool? isBookingEnabled, @JsonKey(name: 'stop_reason')  String? stopReason, @JsonKey(name: 'shift_closed')  BookingShift? shiftClosed, @JsonKey(name: 'shift_full')  BookingShift? shiftFull, @JsonKey(name: 'morning_full')  bool? morningFull, @JsonKey(name: 'evening_full')  bool? eveningFull, @JsonKey(name: 'morning_available')  bool? morningAvailable, @JsonKey(name: 'evening_available')  bool? eveningAvailable, @JsonKey(name: 'booking_morning_start_time')  String? bookingMorningStartTime, @JsonKey(name: 'next_open_at')  String? nextOpenAt, @JsonKey(name: 'next_open_in_days')  int? nextOpenInDays)  $default,) {final _that = this;
 switch (_that) {
 case _$BookingStatusModelImpl():
-return $default(_that.isOpen,_that.shift,_that.timeLeft,_that.isBookingEnabled,_that.stopReason,_that.shiftClosed,_that.shiftFull,_that.morningFull,_that.eveningFull,_that.morningAvailable,_that.eveningAvailable,_that.bookingMorningStartTime);case _:
+return $default(_that.isOpen,_that.shift,_that.timeLeft,_that.isBookingEnabled,_that.stopReason,_that.shiftClosed,_that.shiftFull,_that.morningFull,_that.eveningFull,_that.morningAvailable,_that.eveningAvailable,_that.bookingMorningStartTime,_that.nextOpenAt,_that.nextOpenInDays);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -215,10 +220,10 @@ return $default(_that.isOpen,_that.shift,_that.timeLeft,_that.isBookingEnabled,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'is_open')  bool? isOpen, @JsonKey(name: 'shift')  BookingShift? shift, @JsonKey(name: 'time_left')  int? timeLeft, @JsonKey(name: 'is_booking_enabled')  bool? isBookingEnabled, @JsonKey(name: 'stop_reason')  String? stopReason, @JsonKey(name: 'shift_closed')  BookingShift? shiftClosed, @JsonKey(name: 'shift_full')  BookingShift? shiftFull, @JsonKey(name: 'morning_full')  bool? morningFull, @JsonKey(name: 'evening_full')  bool? eveningFull, @JsonKey(name: 'morning_available')  bool? morningAvailable, @JsonKey(name: 'evening_available')  bool? eveningAvailable, @JsonKey(name: 'booking_morning_start_time')  String? bookingMorningStartTime)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'is_open')  bool? isOpen, @JsonKey(name: 'shift')  BookingShift? shift, @JsonKey(name: 'time_left')  int? timeLeft, @JsonKey(name: 'is_booking_enabled')  bool? isBookingEnabled, @JsonKey(name: 'stop_reason')  String? stopReason, @JsonKey(name: 'shift_closed')  BookingShift? shiftClosed, @JsonKey(name: 'shift_full')  BookingShift? shiftFull, @JsonKey(name: 'morning_full')  bool? morningFull, @JsonKey(name: 'evening_full')  bool? eveningFull, @JsonKey(name: 'morning_available')  bool? morningAvailable, @JsonKey(name: 'evening_available')  bool? eveningAvailable, @JsonKey(name: 'booking_morning_start_time')  String? bookingMorningStartTime, @JsonKey(name: 'next_open_at')  String? nextOpenAt, @JsonKey(name: 'next_open_in_days')  int? nextOpenInDays)?  $default,) {final _that = this;
 switch (_that) {
 case _$BookingStatusModelImpl() when $default != null:
-return $default(_that.isOpen,_that.shift,_that.timeLeft,_that.isBookingEnabled,_that.stopReason,_that.shiftClosed,_that.shiftFull,_that.morningFull,_that.eveningFull,_that.morningAvailable,_that.eveningAvailable,_that.bookingMorningStartTime);case _:
+return $default(_that.isOpen,_that.shift,_that.timeLeft,_that.isBookingEnabled,_that.stopReason,_that.shiftClosed,_that.shiftFull,_that.morningFull,_that.eveningFull,_that.morningAvailable,_that.eveningAvailable,_that.bookingMorningStartTime,_that.nextOpenAt,_that.nextOpenInDays);case _:
   return null;
 
 }
@@ -230,7 +235,7 @@ return $default(_that.isOpen,_that.shift,_that.timeLeft,_that.isBookingEnabled,_
 @JsonSerializable()
 
 class _$BookingStatusModelImpl extends BookingStatusModel {
-  const _$BookingStatusModelImpl({@JsonKey(name: 'is_open') this.isOpen, @JsonKey(name: 'shift') this.shift, @JsonKey(name: 'time_left') this.timeLeft, @JsonKey(name: 'is_booking_enabled') this.isBookingEnabled, @JsonKey(name: 'stop_reason') this.stopReason, @JsonKey(name: 'shift_closed') this.shiftClosed, @JsonKey(name: 'shift_full') this.shiftFull, @JsonKey(name: 'morning_full') this.morningFull, @JsonKey(name: 'evening_full') this.eveningFull, @JsonKey(name: 'morning_available') this.morningAvailable, @JsonKey(name: 'evening_available') this.eveningAvailable, @JsonKey(name: 'booking_morning_start_time') this.bookingMorningStartTime}): super._();
+  const _$BookingStatusModelImpl({@JsonKey(name: 'is_open') this.isOpen, @JsonKey(name: 'shift') this.shift, @JsonKey(name: 'time_left') this.timeLeft, @JsonKey(name: 'is_booking_enabled') this.isBookingEnabled, @JsonKey(name: 'stop_reason') this.stopReason, @JsonKey(name: 'shift_closed') this.shiftClosed, @JsonKey(name: 'shift_full') this.shiftFull, @JsonKey(name: 'morning_full') this.morningFull, @JsonKey(name: 'evening_full') this.eveningFull, @JsonKey(name: 'morning_available') this.morningAvailable, @JsonKey(name: 'evening_available') this.eveningAvailable, @JsonKey(name: 'booking_morning_start_time') this.bookingMorningStartTime, @JsonKey(name: 'next_open_at') this.nextOpenAt, @JsonKey(name: 'next_open_in_days') this.nextOpenInDays}): super._();
   factory _$BookingStatusModelImpl.fromJson(Map<String, dynamic> json) => _$$BookingStatusModelImplFromJson(json);
 
 @override@JsonKey(name: 'is_open') final  bool? isOpen;
@@ -248,6 +253,11 @@ class _$BookingStatusModelImpl extends BookingStatusModel {
 @override@JsonKey(name: 'evening_available') final  bool? eveningAvailable;
 /// Clinic morning booking open time as HH:MM (from get_booking_status).
 @override@JsonKey(name: 'booking_morning_start_time') final  String? bookingMorningStartTime;
+/// Clinic wall-clock time when booking next opens (ISO, no timezone);
+/// null while booking is open or when no working day is configured.
+@override@JsonKey(name: 'next_open_at') final  String? nextOpenAt;
+/// Days from the clinic's today to [nextOpenAt] (0 = today, 1 = tomorrow).
+@override@JsonKey(name: 'next_open_in_days') final  int? nextOpenInDays;
 
 /// Create a copy of BookingStatusModel
 /// with the given fields replaced by the non-null parameter values.
@@ -262,16 +272,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _$BookingStatusModelImpl&&(identical(other.isOpen, isOpen) || other.isOpen == isOpen)&&(identical(other.shift, shift) || other.shift == shift)&&(identical(other.timeLeft, timeLeft) || other.timeLeft == timeLeft)&&(identical(other.isBookingEnabled, isBookingEnabled) || other.isBookingEnabled == isBookingEnabled)&&(identical(other.stopReason, stopReason) || other.stopReason == stopReason)&&(identical(other.shiftClosed, shiftClosed) || other.shiftClosed == shiftClosed)&&(identical(other.shiftFull, shiftFull) || other.shiftFull == shiftFull)&&(identical(other.morningFull, morningFull) || other.morningFull == morningFull)&&(identical(other.eveningFull, eveningFull) || other.eveningFull == eveningFull)&&(identical(other.morningAvailable, morningAvailable) || other.morningAvailable == morningAvailable)&&(identical(other.eveningAvailable, eveningAvailable) || other.eveningAvailable == eveningAvailable)&&(identical(other.bookingMorningStartTime, bookingMorningStartTime) || other.bookingMorningStartTime == bookingMorningStartTime));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _$BookingStatusModelImpl&&(identical(other.isOpen, isOpen) || other.isOpen == isOpen)&&(identical(other.shift, shift) || other.shift == shift)&&(identical(other.timeLeft, timeLeft) || other.timeLeft == timeLeft)&&(identical(other.isBookingEnabled, isBookingEnabled) || other.isBookingEnabled == isBookingEnabled)&&(identical(other.stopReason, stopReason) || other.stopReason == stopReason)&&(identical(other.shiftClosed, shiftClosed) || other.shiftClosed == shiftClosed)&&(identical(other.shiftFull, shiftFull) || other.shiftFull == shiftFull)&&(identical(other.morningFull, morningFull) || other.morningFull == morningFull)&&(identical(other.eveningFull, eveningFull) || other.eveningFull == eveningFull)&&(identical(other.morningAvailable, morningAvailable) || other.morningAvailable == morningAvailable)&&(identical(other.eveningAvailable, eveningAvailable) || other.eveningAvailable == eveningAvailable)&&(identical(other.bookingMorningStartTime, bookingMorningStartTime) || other.bookingMorningStartTime == bookingMorningStartTime)&&(identical(other.nextOpenAt, nextOpenAt) || other.nextOpenAt == nextOpenAt)&&(identical(other.nextOpenInDays, nextOpenInDays) || other.nextOpenInDays == nextOpenInDays));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,isOpen,shift,timeLeft,isBookingEnabled,stopReason,shiftClosed,shiftFull,morningFull,eveningFull,morningAvailable,eveningAvailable,bookingMorningStartTime);
+int get hashCode => Object.hash(runtimeType,isOpen,shift,timeLeft,isBookingEnabled,stopReason,shiftClosed,shiftFull,morningFull,eveningFull,morningAvailable,eveningAvailable,bookingMorningStartTime,nextOpenAt,nextOpenInDays);
 
 @override
 String toString() {
-  return 'BookingStatusModel(isOpen: $isOpen, shift: $shift, timeLeft: $timeLeft, isBookingEnabled: $isBookingEnabled, stopReason: $stopReason, shiftClosed: $shiftClosed, shiftFull: $shiftFull, morningFull: $morningFull, eveningFull: $eveningFull, morningAvailable: $morningAvailable, eveningAvailable: $eveningAvailable, bookingMorningStartTime: $bookingMorningStartTime)';
+  return 'BookingStatusModel(isOpen: $isOpen, shift: $shift, timeLeft: $timeLeft, isBookingEnabled: $isBookingEnabled, stopReason: $stopReason, shiftClosed: $shiftClosed, shiftFull: $shiftFull, morningFull: $morningFull, eveningFull: $eveningFull, morningAvailable: $morningAvailable, eveningAvailable: $eveningAvailable, bookingMorningStartTime: $bookingMorningStartTime, nextOpenAt: $nextOpenAt, nextOpenInDays: $nextOpenInDays)';
 }
 
 
@@ -282,7 +292,7 @@ abstract mixin class _$$BookingStatusModelImplCopyWith<$Res> implements $Booking
   factory _$$BookingStatusModelImplCopyWith(_$BookingStatusModelImpl value, $Res Function(_$BookingStatusModelImpl) _then) = __$$BookingStatusModelImplCopyWithImpl;
 @override @useResult
 $Res call({
-@JsonKey(name: 'is_open') bool? isOpen,@JsonKey(name: 'shift') BookingShift? shift,@JsonKey(name: 'time_left') int? timeLeft,@JsonKey(name: 'is_booking_enabled') bool? isBookingEnabled,@JsonKey(name: 'stop_reason') String? stopReason,@JsonKey(name: 'shift_closed') BookingShift? shiftClosed,@JsonKey(name: 'shift_full') BookingShift? shiftFull,@JsonKey(name: 'morning_full') bool? morningFull,@JsonKey(name: 'evening_full') bool? eveningFull,@JsonKey(name: 'morning_available') bool? morningAvailable,@JsonKey(name: 'evening_available') bool? eveningAvailable,@JsonKey(name: 'booking_morning_start_time') String? bookingMorningStartTime
+@JsonKey(name: 'is_open') bool? isOpen,@JsonKey(name: 'shift') BookingShift? shift,@JsonKey(name: 'time_left') int? timeLeft,@JsonKey(name: 'is_booking_enabled') bool? isBookingEnabled,@JsonKey(name: 'stop_reason') String? stopReason,@JsonKey(name: 'shift_closed') BookingShift? shiftClosed,@JsonKey(name: 'shift_full') BookingShift? shiftFull,@JsonKey(name: 'morning_full') bool? morningFull,@JsonKey(name: 'evening_full') bool? eveningFull,@JsonKey(name: 'morning_available') bool? morningAvailable,@JsonKey(name: 'evening_available') bool? eveningAvailable,@JsonKey(name: 'booking_morning_start_time') String? bookingMorningStartTime,@JsonKey(name: 'next_open_at') String? nextOpenAt,@JsonKey(name: 'next_open_in_days') int? nextOpenInDays
 });
 
 
@@ -299,7 +309,7 @@ class __$$BookingStatusModelImplCopyWithImpl<$Res>
 
 /// Create a copy of BookingStatusModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? isOpen = freezed,Object? shift = freezed,Object? timeLeft = freezed,Object? isBookingEnabled = freezed,Object? stopReason = freezed,Object? shiftClosed = freezed,Object? shiftFull = freezed,Object? morningFull = freezed,Object? eveningFull = freezed,Object? morningAvailable = freezed,Object? eveningAvailable = freezed,Object? bookingMorningStartTime = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? isOpen = freezed,Object? shift = freezed,Object? timeLeft = freezed,Object? isBookingEnabled = freezed,Object? stopReason = freezed,Object? shiftClosed = freezed,Object? shiftFull = freezed,Object? morningFull = freezed,Object? eveningFull = freezed,Object? morningAvailable = freezed,Object? eveningAvailable = freezed,Object? bookingMorningStartTime = freezed,Object? nextOpenAt = freezed,Object? nextOpenInDays = freezed,}) {
   return _then(_$BookingStatusModelImpl(
 isOpen: freezed == isOpen ? _self.isOpen : isOpen // ignore: cast_nullable_to_non_nullable
 as bool?,shift: freezed == shift ? _self.shift : shift // ignore: cast_nullable_to_non_nullable
@@ -313,7 +323,9 @@ as bool?,eveningFull: freezed == eveningFull ? _self.eveningFull : eveningFull /
 as bool?,morningAvailable: freezed == morningAvailable ? _self.morningAvailable : morningAvailable // ignore: cast_nullable_to_non_nullable
 as bool?,eveningAvailable: freezed == eveningAvailable ? _self.eveningAvailable : eveningAvailable // ignore: cast_nullable_to_non_nullable
 as bool?,bookingMorningStartTime: freezed == bookingMorningStartTime ? _self.bookingMorningStartTime : bookingMorningStartTime // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,nextOpenAt: freezed == nextOpenAt ? _self.nextOpenAt : nextOpenAt // ignore: cast_nullable_to_non_nullable
+as String?,nextOpenInDays: freezed == nextOpenInDays ? _self.nextOpenInDays : nextOpenInDays // ignore: cast_nullable_to_non_nullable
+as int?,
   ));
 }
 

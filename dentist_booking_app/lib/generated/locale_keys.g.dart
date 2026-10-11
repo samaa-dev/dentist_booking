@@ -162,6 +162,9 @@ abstract class  LocaleKeys {
   static const wait_time = 'wait_time';
   static const booking_closed_now = 'booking_closed_now';
   static const booking_closed_opens_morning = 'booking_closed_opens_morning';
+  static const booking_opens_today_at = 'booking_opens_today_at';
+  static const booking_opens_tomorrow_at = 'booking_opens_tomorrow_at';
+  static const booking_opens_on_day_at = 'booking_opens_on_day_at';
   static const morning_shift_closed_today = 'morning_shift_closed_today';
   static const evening_shift_closed_today = 'evening_shift_closed_today';
   static const shift_closed_today = 'shift_closed_today';

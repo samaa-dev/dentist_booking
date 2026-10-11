@@ -131,6 +131,39 @@ limit 20;
 
 يتطلب حساب Apple Developer (~99$/سنة)، مفتاح APNs في Firebase، و`GoogleService-Info.plist` + صلاحيات iOS في التطبيق.
 
+## تشخيص سريع
+
+```sql
+select public.push_diagnostics();
+```
+
+يعرض: عدد التوكنات، المهام حسب الحالة (آخر 7 أيام)، آخر الأخطاء، وحالة الإرسال عبر pg_net.
+
+اختبار مفتاح Firebase (لا يرسل شيئاً إن لم توجد مهام معلّقة):
+
+```bash
+curl -s -X POST 'https://agyqdghxqylwinpcvvmn.supabase.co/functions/v1/send-push' \
+  -H 'Content-Type: application/json' -H "x-push-secret: $PUSH_WEBHOOK_SECRET" \
+  -d '{"process_pending": true}'
+```
+
+- `invalid_grant: Invalid JWT Signature` ← مفتاح حساب الخدمة محذوف أو مُبدَّل: أنشئ مفتاحاً جديداً (الخطوة 2) وأعد `supabase secrets set FIREBASE_SERVICE_ACCOUNT=...`.
+
+### ربط سرّ الـ Webhook (موصى به)
+
+```bash
+supabase secrets set PUSH_WEBHOOK_SECRET="<سلسلة طويلة عشوائية>"
+```
+
+```sql
+update public.push_config set webhook_secret = '<نفس السلسلة>', updated_at = now() where id = 1;
+```
+
+ملاحظات على السلوك:
+- كل مهمة تُحجز ذرّياً (`pending → processing`) فلا يتكرر الإشعار حتى لو كان الـ Webhook و pg_net مفعّلين معاً.
+- أي استدعاء للدالة يعيد محاولة المهام العالقة في `pending` لأكثر من دقيقة.
+- المهام الأقدم من 30 دقيقة لا تُرسل (`error_message = expired`) لأن معلومات الدور تكون قد تقادمت.
+
 ## استكشاف أخطاء شائعة
 
 | عرض | سبب محتمل |
