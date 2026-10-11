@@ -14,6 +14,7 @@ class QueueTicketCard extends StatelessWidget {
     this.margin,
     this.padding = const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
     this.showChrome = true,
+    this.showTicketCode = true,
   });
 
   final String? queueNumber;
@@ -29,12 +30,15 @@ class QueueTicketCard extends StatelessWidget {
   /// (for embedding inside an existing glass / surface panel).
   final bool showChrome;
 
+  /// Hide the ticket code box (e.g. on the home booking panel).
+  final bool showTicketCode;
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
     final badgeText = QueueTurnDisplay.ticketBadgeText(turnKind);
-    final paddedNumber = queueNumber?.padLeft(4, '0') ?? '----';
+    final displayNumber = QueueTurnDisplay.formatQueueNumber(queueNumber);
 
     final content = Column(
       children: [
@@ -56,7 +60,7 @@ class QueueTicketCard extends StatelessWidget {
           const SizedBox(height: 20),
         ],
         Text(
-          '#$paddedNumber',
+          '#$displayNumber',
           style: textTheme.displaySmall?.copyWith(
             fontWeight: FontWeight.bold,
             color: colorScheme.primary,
@@ -70,12 +74,14 @@ class QueueTicketCard extends StatelessWidget {
             color: colorScheme.onSurfaceVariant,
           ),
         ),
-        const SizedBox(height: 26),
-        _TicketCodeBox(
-          title: LocaleKeys.ticket_number.trnsltd,
-          value: ticketCode ?? '',
-          iconColor: colorScheme.secondary,
-        ),
+        if (showTicketCode) ...[
+          const SizedBox(height: 26),
+          _TicketCodeBox(
+            title: LocaleKeys.ticket_number.trnsltd,
+            value: ticketCode ?? '',
+            iconColor: colorScheme.secondary,
+          ),
+        ],
       ],
     );
 

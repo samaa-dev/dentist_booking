@@ -651,6 +651,7 @@ class _ActiveBookingPanel extends StatelessWidget {
         QueueTicketCard(
           queueNumber: queue.booking.queueNumber,
           ticketCode: queue.booking.ticketCode,
+          showTicketCode: false,
           turnKind: turnKind,
           showChrome: false,
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),

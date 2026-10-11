@@ -121,9 +121,7 @@ class QueueCardPro extends StatelessWidget {
               ticketCode: status.currentBooking?.ticketCode ?? '_',
               queueNumber: isNotStarted
                   ? '----'
-                  : (status.currentBooking?.queueNumber ?? 0)
-                      .toString()
-                      .padLeft(4, '0'),
+                  : (status.currentBooking?.queueNumber ?? 0).toString(),
               waitingCount: status.waitingCount,
               isNotStarted: isNotStarted,
               canStartQueue: canStartQueue,

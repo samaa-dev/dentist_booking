@@ -5,9 +5,13 @@ import '../enum/enum.dart';
 part 'booking_model.freezed.dart';
 part 'booking_model.g.dart';
 
-String? queueNumberFromJson(dynamic value) {
+/// Queue number without zero padding: 12 / "0012" -> "12".
+String? queueNumberFromJson(dynamic value) => _queueNumberFromJson(value);
+
+String? _queueNumberFromJson(dynamic value) {
   if (value == null) return null;
-  return value.toString(); // يحول int → String
+  final text = value.toString().trim();
+  return int.tryParse(text)?.toString() ?? text;
 }
 
 dynamic queueNumberToJson(String? value) {
@@ -50,10 +54,8 @@ class BookingModel with _$BookingModel {
   factory BookingModel.fromJson(Map<String, dynamic> json) =>
       _$BookingModelFromJson(json);
 
-  static String? queueNumberFromJson(dynamic value) {
-    if (value == null) return null;
-    return value.toString(); // يحول int → String
-  }
+  static String? queueNumberFromJson(dynamic value) =>
+      _queueNumberFromJson(value);
 
   static dynamic queueNumberToJson(String? value) {
     return value; // ترسله كما هو

@@ -179,7 +179,9 @@ class _ActiveBookingsListState extends State<ActiveBookingsList> {
                                             ),
                                           ),
                                           Text(
-                                            queue.booking.queueNumber!.padLeft(4, '0'),
+                                            QueueTurnDisplay.formatQueueNumber(
+                                              queue.booking.queueNumber,
+                                            ),
                                             style: textTheme.bodySmall?.copyWith(
                                               fontWeight: FontWeight.bold,
                                               color: colorScheme.primary,
@@ -221,6 +223,7 @@ class _ActiveBookingsListState extends State<ActiveBookingsList> {
                                 QueueTicketCard(
                                   queueNumber: queue.booking.queueNumber,
                                   ticketCode: queue.booking.ticketCode,
+                                  showTicketCode: false,
                                   turnKind: turnKind,
                                   showChrome: false,
                                   padding: const EdgeInsets.symmetric(

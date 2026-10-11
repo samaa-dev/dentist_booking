@@ -242,7 +242,7 @@ class _CurrentCard extends StatelessWidget {
                     child: Text(
                       isNotStarted
                           ? _notStartedMessage
-                          : currentNumber.toString().padLeft(4, '0'),
+                          : currentNumber.toString(),
                       textAlign: TextAlign.center,
                       style: textTheme.headlineLarge?.copyWith(
                         fontWeight: FontWeight.w900,

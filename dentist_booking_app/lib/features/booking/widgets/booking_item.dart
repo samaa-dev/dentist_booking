@@ -10,6 +10,7 @@ import 'package:timeago/timeago.dart' as timeago;
 
 import '../../../core/enum/enum.dart';
 import '../../../core/util/calendar_date.dart';
+import '../../../core/util/queue_turn_display.dart';
 import '../../../core/util/util.dart';
 import '../../../core/widgets/custom_chip.dart';
 import '../../../generated/locale_keys.g.dart';
@@ -62,7 +63,7 @@ class BookingItem extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "#${booking.queueNumber?.padLeft(4, '0')}",
+                  "#${QueueTurnDisplay.formatQueueNumber(booking.queueNumber)}",
                   style: textTheme.bodyMedium!.copyWith(
                     fontWeight: FontWeight.bold,
                     color: colorScheme.primary,

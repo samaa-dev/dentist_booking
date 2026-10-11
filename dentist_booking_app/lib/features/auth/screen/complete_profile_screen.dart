@@ -8,7 +8,6 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../../core/util/util.dart';
 import '../../../core/widgets/appbar/app_bar.dart';
-import '../../../core/widgets/custom_date_picker.dart';
 import '../../../core/widgets/custom_outlined_button.dart';
 import '../../../core/widgets/custom_text_form_field.dart';
 
@@ -29,9 +28,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   late TextEditingController _phoneController;
   late TextEditingController _addressController;
 
-  DateTime _selectedDate = DateTime.now();
-  bool _hasBirthError = true;
-
   final _formKey = GlobalKey<FormState>();
 
   bool get _isEditMode => widget.profile != null;
@@ -49,24 +45,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     _addressController = TextEditingController(
       text: widget.profile?['address'] ?? "",
     );
-
-    final birthDateStr = widget.profile?['birth_date'];
-    if (birthDateStr is String) {
-      final parsed = DateTime.tryParse(birthDateStr);
-      if (parsed != null) {
-        _selectedDate = parsed;
-        _hasBirthError = _computeBirthError(parsed);
-      }
-    }
-  }
-
-  bool _computeBirthError(DateTime birthDate) {
-    final now = DateTime.now();
-    final age = now.year - birthDate.year;
-    final hasBirthdayPassedThisYear =
-        (now.month > birthDate.month) || (now.month == birthDate.month && now.day >= birthDate.day);
-    final realAge = hasBirthdayPassedThisYear ? age : age - 1;
-    return realAge < 18;
   }
 
   @override
@@ -124,17 +102,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                     ),
                     SizedBox(height: 12),
 
-                    CustomDatePickerField(
-                      selectedDate: _selectedDate,
-                      hint: LocaleKeys.brith_date.trnsltd,
-                      errorText: _hasBirthError ? LocaleKeys.brith_date_error.trnsltd : null,
-                      onChanged: (date) {
-                        setState(() => _selectedDate = date);
-                        _checkBirthDate();
-                      },
-                    ),
-                    SizedBox(height: 12),
-
                     CustomTextFormField(
                       hintText: LocaleKeys.address.trnsltd,
                       controller: _addressController,
@@ -188,18 +155,13 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     );
   }
 
-  void _checkBirthDate() {
-    setState(() => _hasBirthError = _computeBirthError(_selectedDate));
-  }
-
   void _onSaveProfilePressed(BuildContext context) async {
-    if (!_formKey.currentState!.validate() || _hasBirthError) return;
+    if (!_formKey.currentState!.validate()) return;
 
     final profile = {
       'full_name': _fullNameController.text.trim(),
       'phone': _phoneController.text.trim(),
       'address': _addressController.text.trim(),
-      'birth_date': _selectedDate.toIso8601String(),
     };
 
     SnackbarMes.showLoadingDialog(context);

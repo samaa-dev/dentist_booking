@@ -14,7 +14,8 @@ class NextBookingDisplay {
     if (json == null) return const NextBookingDisplay();
     final q = json['queue_number'];
     return NextBookingDisplay(
-      queueNumber: q?.toString(),
+      // Strip zero padding: "0012" -> "12".
+      queueNumber: q == null ? null : (int.tryParse('$q') ?? q).toString(),
       patientName: json['patient_name'] as String?,
       ticketCode: json['ticket_code'] as String?,
     );

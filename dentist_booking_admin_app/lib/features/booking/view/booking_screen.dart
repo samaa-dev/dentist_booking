@@ -271,7 +271,7 @@ class BookingCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '#${booking.queueNumber?.padLeft(4, '0') ?? '----'}',
+                  '#${booking.queueNumber ?? '-'}',
                   style: textTheme.bodyMedium!.copyWith(
                     fontWeight: FontWeight.bold,
                     color: colorScheme.primary,
@@ -385,7 +385,7 @@ class BookingDetailsSheet extends StatelessWidget {
           ),
           _DetailRow(
             icon: HugeIcons.strokeRoundedMenu01,
-            label: '#${booking.queueNumber?.padLeft(4, '0') ?? '----'}',
+            label: '#${booking.queueNumber ?? '-'}',
           ),
           _DetailRow(
             icon: HugeIcons.strokeRoundedCalendar01,

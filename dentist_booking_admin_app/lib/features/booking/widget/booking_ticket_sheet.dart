@@ -61,7 +61,7 @@ class BookingTicketSheet extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  booking.queueNumber?.padLeft(4, '0') ?? '----',
+                  booking.queueNumber ?? '-',
                   style: textTheme.displayMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: colorScheme.primary,

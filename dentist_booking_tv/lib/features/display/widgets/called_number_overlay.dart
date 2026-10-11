@@ -179,7 +179,7 @@ class _CalledNumberOverlayState extends State<CalledNumberOverlay>
                               ),
                               SizedBox(width: context.s(16)),
                               Text(
-                                widget.queueNumber.toString().padLeft(4, '0'),
+                                widget.queueNumber.toString(),
                                 style: textTheme.headlineLarge?.copyWith(
                                   fontWeight: FontWeight.w900,
                                   fontSize: context.s(120),

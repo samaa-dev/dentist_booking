@@ -12,6 +12,13 @@ enum QueueTurnKind {
 }
 
 abstract final class QueueTurnDisplay {
+  /// Queue number for display without zero padding ("0012" -> "12").
+  static String formatQueueNumber(Object? value, {String fallback = '-'}) {
+    final text = value?.toString().trim() ?? '';
+    if (text.isEmpty) return fallback;
+    return int.tryParse(text)?.toString() ?? text;
+  }
+
   static QueueTurnKind resolve({
     required QueueStatsModel stats,
     required String? patientQueueNumber,
